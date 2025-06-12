@@ -1,0 +1,42 @@
+﻿@{
+    ViewBag.Title = "Admin - Điều khiển thi";
+}
+
+<h2>Điều khiển vòng thi</h2>
+
+<!-- ✅ Đây là phần hiển thị nút -->
+<button onclick="startRound()">Bắt đầu vòng 1</button>
+<br />
+<br />
+<button onclick="nextQuestion()">Chuyển câu tiếp theo</button>
+
+<!-- ✅ Script Socket.IO -->
+<script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+<script>
+    // Bắt đầu kết nối
+    const socket = io("http://localhost:3000");
+
+    // Kiểm tra kết nối
+    socket.on("connect", () => {
+        console.log("🟢 Kết nối Socket.IO thành công");
+    });
+
+    socket.on("connect_error", (err) => {
+        console.error("❌ Lỗi khi kết nối Socket.IO:", err);
+    });
+
+    // Logic điều khiển vòng thi
+    let currentIndex = 0;
+
+    function startRound() {
+        currentIndex = 0;
+        alert("Gửi bắt đầu vòng 1"); // thêm dòng kiểm tra
+        socket.emit("start-round", 1);
+        socket.emit("show-question", currentIndex);
+    }
+
+    function nextQuestion() {
+        currentIndex++;
+        socket.emit("show-question", currentIndex);
+    }
+</script>

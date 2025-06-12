@@ -1,0 +1,88 @@
+﻿@{
+    ViewBag.Title = "Thi sinh - Vòng 1";
+}
+
+<h2>Câu hỏi <span id="questionIndex">1</span>/10</h2>
+<div id="questionText">Đang chờ bắt đầu...</div>
+
+<ul id="answerList"></ul>
+
+<h3>Thời gian còn lại: <span id="timer">--</span> giây</h3>
+
+<script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+<script>
+    const socket = io("http://localhost:3000");
+
+    let questions = [];
+    let currentIndex = -1;
+    let timerInterval;
+
+    // Nhận tín hiệu bắt đầu vòng
+    socket.on('round-started', async (round) => {
+        const res = await fetch(`http://localhost:3000/api/questions/random/${round}`);
+        questions = await res.json();
+        currentIndex = 0;
+        showQuestion();
+    });
+
+    // Nhận tín hiệu chuyển câu
+    socket.on('show-question', (index) => {
+        currentIndex = index;
+        showQuestion();
+    });
+
+    function showQuestion() {
+        if (currentIndex >= questions.length) {
+            document.getElementById("questionText").innerText = "Đã hết câu hỏi.";
+            return;
+        }
+
+        const q = questions[currentIndex];
+        document.getElementById("questionIndex").innerText = currentIndex + 1;
+        document.getElementById("questionText").innerText = q.Content;
+
+        const ul = document.getElementById("answerList");
+        ul.innerHTML = "";
+
+        ["A", "B", "C", "D"].forEach(opt => {
+            const li = document.createElement("li");
+            li.innerHTML = `<button onclick="submitAnswer('${opt}')">${opt}: ${q["Option" + opt]}</button>`;
+            ul.appendChild(li);
+        });
+
+        startTimer(15); // ví dụ: 15 giây
+    }
+
+    function startTimer(seconds) {
+        clearInterval(timerInterval);
+        let timeLeft = seconds;
+        document.getElementById("timer").innerText = timeLeft;
+
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            document.getElementById("timer").innerText = timeLeft;
+
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                submitAnswer(""); // hết giờ
+            }
+        }, 1000);
+    }
+
+    async function submitAnswer(answer) {
+        clearInterval(timerInterval);
+        const question = questions[currentIndex];
+
+        await fetch('http://localhost:3000/api/answers', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userId: 1, // ⚠ đổi thành ID thí sinh đang login
+                questionId: question.QuestionId,
+                selectedAnswer: answer
+            })
+        });
+
+        document.getElementById("questionText").innerText = "Đã gửi đáp án...";
+    }
+</script>
