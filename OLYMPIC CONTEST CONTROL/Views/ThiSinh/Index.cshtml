@@ -1,59 +1,115 @@
 ﻿@{
-    ViewBag.Title = "Thi sinh - Vòng 1";
+    ViewBag.Title = "Thí sinh - Vòng thi";
+}
+@if (Session["FullName"] != null)
+{
+    <p>Chào mừng, @Session["FullName"]!</p>
 }
 
-<h2>Câu hỏi <span id="questionIndex">1</span>/10</h2>
+<h2>Câu hỏi <span id="questionIndex">--</span>/10</h2>
 <div id="questionText">Đang chờ bắt đầu...</div>
-
-<ul id="answerList"></ul>
-
+<div id="answerList"></div>
 <h3>Thời gian còn lại: <span id="timer">--</span> giây</h3>
+<p id="explanationBox" style="display:none; font-style:italic; margin-top:10px; color:blue;"></p>
+<div id="summaryBox" style="margin-top:20px;"></div>
 
 <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
 <script>
     const socket = io("http://localhost:3000");
+    const userId = @Session["UserId"];
 
-    let questions = [];
-    let currentIndex = -1;
+    let currentRound = 0;
+    let currentIndex = 0;
+    let currentQuestionId = null;
+    let canAnswer = false;
     let timerInterval;
+    let correctAnswer = null;
+    let selectedAnswer = null;
 
-    // Nhận tín hiệu bắt đầu vòng
+    socket.emit("join-room", userId);
+
     socket.on('round-started', async (round) => {
-        const res = await fetch(`http://localhost:3000/api/questions/random/${round}`);
-        questions = await res.json();
+        currentRound = round;
         currentIndex = 0;
-        showQuestion();
+        await loadQuestion(currentRound);
+        canAnswer = false;
     });
 
-    // Nhận tín hiệu chuyển câu
-    socket.on('show-question', (index) => {
-        currentIndex = index;
-        showQuestion();
+    socket.on('show-question', async (round) => {
+        currentRound = round;
+        currentIndex = 0;
+        await loadQuestion(currentRound);
+        canAnswer = false;
     });
 
-    function showQuestion() {
-        if (currentIndex >= questions.length) {
-            document.getElementById("questionText").innerText = "Đã hết câu hỏi.";
-            return;
+    socket.on("start-timer", ({ round, questionId }) => {
+        if (round === currentRound) {
+            canAnswer = true;
+            selectedAnswer = null;
+            currentQuestionId = questionId;
+            startTimer(15, currentQuestionId);
         }
+    });
 
-        const q = questions[currentIndex];
-        document.getElementById("questionIndex").innerText = currentIndex + 1;
-        document.getElementById("questionText").innerText = q.Content;
+    socket.on("show-answer", ({ round, correctAnswer, explanation }) => {
+        if (round === currentRound) {
+            const correctBtn = document.getElementById("btn_" + correctAnswer);
+            if (correctBtn) {
+                correctBtn.style.border = "5px solid red";
+                correctBtn.style.fontWeight = "bold";
+            }
 
-        const ul = document.getElementById("answerList");
-        ul.innerHTML = "";
+            const explain = document.createElement("p");
+            explain.innerText = `📝 Lời giải: ${explanation}`;
+            document.getElementById("answerList").appendChild(explain);
+        }
+    });
 
-        ["A", "B", "C", "D"].forEach(opt => {
-            const li = document.createElement("li");
-            li.innerHTML = `<button onclick="submitAnswer('${opt}')">${opt}: ${q["Option" + opt]}</button>`;
-            ul.appendChild(li);
+    socket.on("summary-user-answers", (answers) => {
+        let summary = "<h3>📋 Kết quả các câu đã làm:</h3><ul>";
+        answers.forEach((q, index) => {
+            const isCorrect = q.CorrectAnswer === q.SelectedAnswer;
+            summary += `<li><strong>Câu ${index + 1}</strong>: ${isCorrect ? "✅ Đúng" : "❌ Sai"} <br/>
+        <em>Đáp án đúng: ${q.CorrectAnswer} | Bạn chọn: ${q.SelectedAnswer ?? "Không chọn"}</em></li>`;
         });
+        summary += "</ul>";
 
-        startTimer(15); // ví dụ: 15 giây
+        const resultBox = document.createElement("div");
+        resultBox.innerHTML = summary;
+        document.body.appendChild(resultBox); // hoặc gắn vào div cụ thể
+    });
+
+
+    async function loadQuestion(round) {
+        clearInterval(timerInterval);
+        try {
+            const res = await fetch(`http://localhost:3000/api/questions/question/${round}/0`);
+            if (!res.ok) {
+                document.getElementById("questionText").innerText = "Không tải được câu hỏi.";
+                return;
+            }
+
+            const q = await res.json();
+            currentQuestionId = q.QuestionId;
+            correctAnswer = q.CorrectAnswer;
+
+            document.getElementById("questionIndex").innerText = round;
+            document.getElementById("questionText").innerText = q.Content;
+
+            const container = document.getElementById("answerList");
+            container.innerHTML = ["A", "B", "C", "D"].map(opt => `
+                <div><button id="btn_${opt}" onclick="submitAnswer('${opt}', ${q.QuestionId})">${opt}: ${q["Option" + opt]}</button></div>
+            `).join("");
+
+            document.getElementById("timer").innerText = "--";
+            document.getElementById("explanationBox").style.display = "none";
+        } catch (err) {
+            console.error("❌ Lỗi khi tải câu hỏi:", err);
+            document.getElementById("questionText").innerText = "Lỗi khi tải câu hỏi.";
+        }
     }
 
-    function startTimer(seconds) {
+    function startTimer(seconds, questionId) {
         clearInterval(timerInterval);
         let timeLeft = seconds;
         document.getElementById("timer").innerText = timeLeft;
@@ -64,25 +120,54 @@
 
             if (timeLeft <= 0) {
                 clearInterval(timerInterval);
-                submitAnswer(""); // hết giờ
+                canAnswer = false;
+                highlightCorrect();
+                sendFinalAnswer();
             }
         }, 1000);
     }
 
-    async function submitAnswer(answer) {
-        clearInterval(timerInterval);
-        const question = questions[currentIndex];
+    async function submitAnswer(answer, questionId) {
+        if (!canAnswer) return;
+        selectedAnswer = answer;
 
-        await fetch('http://localhost:3000/api/answers', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                userId: 1, // ⚠ đổi thành ID thí sinh đang login
-                questionId: question.QuestionId,
-                selectedAnswer: answer
-            })
-        });
-
-        document.getElementById("questionText").innerText = "Đã gửi đáp án...";
+        document.getElementById("questionText").innerText = `Bạn đã chọn đáp án: ${answer}`;
     }
+
+    async function sendFinalAnswer() {
+        if (selectedAnswer === null) {
+            document.getElementById("questionText").innerText = "Bạn không chọn đáp án nào.";
+        }
+
+        try {
+            await fetch('http://localhost:3000/api/answers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: userId,
+                    questionId: currentQuestionId,
+                    selectedAnswer: selectedAnswer
+                })
+            });
+        } catch (err) {
+            console.error("❌ Lỗi khi gửi đáp án:", err);
+        }
+    }
+
+    function highlightCorrect() {
+        if (!correctAnswer) return;
+        const btn = document.getElementById("btn_" + correctAnswer);
+        if (btn) {
+            btn.style.border = "5px solid red";
+            btn.style.fontWeight = "bold";
+        }
+    }
+
+    socket.on("round-ended", (round) => {
+        alert("⏹ Vòng " + round + " đã kết thúc!");
+    });
+
+    socket.on("display-results", () => {
+        alert("📊 Tổng kết điểm sẽ hiển thị ở đây!");
+    });
 </script>

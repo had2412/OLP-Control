@@ -11,6 +11,12 @@ namespace OLYMPIC_CONTEST_CONTROL.Controllers
         // GET: ThiSinh
         public ActionResult Index()
         {
+            if (Session["UserId"] == null)
+            {
+                return RedirectToAction("Login", "Auth");
+            }
+
+            ViewBag.FullName = Session["FullName"];
             return View();
         }
     }

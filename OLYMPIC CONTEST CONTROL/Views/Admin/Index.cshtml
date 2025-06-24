@@ -1,42 +1,110 @@
 ﻿@{
-    ViewBag.Title = "Admin - Điều khiển thi";
+    ViewBag.Title = "Admin - Điều khiển vòng thi";
 }
 
 <h2>Điều khiển vòng thi</h2>
 
-<!-- ✅ Đây là phần hiển thị nút -->
-<button onclick="startRound()">Bắt đầu vòng 1</button>
-<br />
-<br />
-<button onclick="nextQuestion()">Chuyển câu tiếp theo</button>
+<p><strong>Câu hiện tại:</strong> <span id="questionNumber">--</span></p>
+<p><strong>Nội dung:</strong> <span id="questionContent">---</span></p>
+<div id="answerOptions"></div>
+<p><strong>Đáp án đúng:</strong> <span id="correctAnswer">--</span></p>
+<p><strong>Lời giải:</strong> <span id="explanation">--</span></p>
 
-<!-- ✅ Script Socket.IO -->
+<br />
+
+<button onclick="startRound()">Bắt đầu vòng 1</button>
+<button onclick="startTimer()">Bắt đầu làm bài</button>
+<button onclick="nextQuestion()">Chuyển câu tiếp theo</button>
+<button onclick="showAnswer()">Hiện đáp án</button>
+<button onclick="endRound()">Kết thúc vòng thi</button>
+<button onclick="showStudentAnswers()">Đáp án thí sinh</button>
+
+
+
 <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
 <script>
-    // Bắt đầu kết nối
     const socket = io("http://localhost:3000");
 
-    // Kiểm tra kết nối
-    socket.on("connect", () => {
-        console.log("🟢 Kết nối Socket.IO thành công");
-    });
-
-    socket.on("connect_error", (err) => {
-        console.error("❌ Lỗi khi kết nối Socket.IO:", err);
-    });
-
-    // Logic điều khiển vòng thi
+    let currentRound = 1;
     let currentIndex = 0;
 
     function startRound() {
+        currentRound = 1;
         currentIndex = 0;
-        alert("Gửi bắt đầu vòng 1"); // thêm dòng kiểm tra
-        socket.emit("start-round", 1);
-        socket.emit("show-question", currentIndex);
+        socket.emit("start-round", currentRound);
+        socket.emit("show-question", currentRound);
+        loadQuestion(currentRound, currentIndex);
+    }
+
+    function startTimer() {
+        fetch(`http://localhost:3000/api/questions/question/${currentRound}/${currentIndex}`)
+            .then(res => res.json())
+            .then(q => {
+                socket.emit("start-timer", {
+                    round: currentRound,
+                    questionId: q.QuestionId
+                });
+            });
     }
 
     function nextQuestion() {
-        currentIndex++;
-        socket.emit("show-question", currentIndex);
+        currentRound++;
+        currentIndex = 0;
+        socket.emit("show-question", currentRound);
+        loadQuestion(currentRound, currentIndex);
     }
+
+    socket.on("show-question", async (round) => {
+        currentRound = round;
+        currentIndex = 0;
+        await loadQuestion(currentRound, currentIndex);
+    });
+
+    async function loadQuestion(round, index) {
+        const res = await fetch(`http://localhost:3000/api/questions/question/${round}/${index}`);
+        if (!res.ok) {
+            document.getElementById("questionContent").innerText = "Không tải được câu hỏi.";
+            return;
+        }
+
+        const q = await res.json();
+        document.getElementById("questionNumber").innerText = round;
+        document.getElementById("questionContent").innerText = q.Content;
+
+        const div = document.getElementById("answerOptions");
+        div.innerHTML = ["A", "B", "C", "D"].map(opt => `
+            <div><strong>${opt}:</strong> ${q["Option" + opt]}</div>
+        `).join("");
+
+        document.getElementById("correctAnswer").innerText = "--";
+        document.getElementById("explanation").innerText = "--";
+    }
+
+    function showAnswer() {
+        fetch(`http://localhost:3000/api/questions/question/${currentRound}/${currentIndex}`)
+            .then(res => res.json())
+            .then(q => {
+                // Hiển thị trên giao diện admin
+                document.getElementById("correctAnswer").innerText = q.CorrectAnswer;
+                document.getElementById("explanation").innerText = q.Explanation;
+
+                // Gửi socket cho thí sinh
+                socket.emit("show-answer", {
+                    correctAnswer: q.CorrectAnswer,
+                    explanation: q.Explanation,
+                    round: currentRound
+                });
+            });
+    }
+
+    function endRound() {
+        socket.emit("round-ended", currentRound);
+        alert("Vòng " + currentRound + " đã kết thúc!");
+    }
+
+    function showStudentAnswers() {
+        socket.emit("request-user-summary");
+    }
+
+
 </script>

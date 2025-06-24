@@ -77,3 +77,7 @@ C:\Users\hoang\source\repos\OLYMPIC CONTEST CONTROL\OLYMPIC CONTEST CONTROL\obj\
 C:\Users\hoang\source\repos\OLYMPIC CONTEST CONTROL\OLYMPIC CONTEST CONTROL\obj\Debug\OLYMPIC CONTEST CONTROL.csproj.CopyComplete
 C:\Users\hoang\source\repos\OLYMPIC CONTEST CONTROL\OLYMPIC CONTEST CONTROL\obj\Debug\OLYMPIC CONTEST CONTROL.dll
 C:\Users\hoang\source\repos\OLYMPIC CONTEST CONTROL\OLYMPIC CONTEST CONTROL\obj\Debug\OLYMPIC CONTEST CONTROL.pdb
+C:\Users\hoang\source\repos\OLYMPIC CONTEST CONTROL\OLYMPIC CONTEST CONTROL\bin\EntityFramework.dll
+C:\Users\hoang\source\repos\OLYMPIC CONTEST CONTROL\OLYMPIC CONTEST CONTROL\bin\EntityFramework.SqlServer.dll
+C:\Users\hoang\source\repos\OLYMPIC CONTEST CONTROL\OLYMPIC CONTEST CONTROL\bin\EntityFramework.xml
+C:\Users\hoang\source\repos\OLYMPIC CONTEST CONTROL\OLYMPIC CONTEST CONTROL\bin\EntityFramework.SqlServer.xml
