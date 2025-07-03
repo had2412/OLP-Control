@@ -1,0 +1,114 @@
+﻿@{
+    ViewBag.Title = "Máy Chiếu - Hiển thị Vòng Thi";
+}
+
+<h2>Câu hỏi <span id="questionIndex">--</span>/10</h2>
+<div id="questionText">Đang chờ bắt đầu...</div>
+<div id="answerList"></div>
+<h3>Thời gian còn lại: <span id="timer">--</span> giây</h3>
+
+<style>
+    body {
+        font-size: 22px;
+    }
+
+    .correct-answer {
+        border: 5px solid red !important;
+        font-weight: bold;
+        background-color: #ffe6e6;
+    }
+
+    #answerList div {
+        margin-top: 10px;
+    }
+
+    button {
+        font-size: 20px;
+        width: 80%;
+    }
+</style>
+
+<script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+<script>
+    const socket = io("http://localhost:3000");
+
+    let currentRound = 0;
+    let currentIndex = 0;
+    let correctAnswer = null;
+    let timerInterval;
+
+    // ✅ Nhận khi bắt đầu vòng mới
+    socket.on('round-started', async (round) => {
+        currentRound = round;
+        currentIndex = 0;
+        document.getElementById("questionText").innerText = "Đang chờ câu hỏi...";
+        document.getElementById("answerList").innerHTML = "";
+        document.getElementById("timer").innerText = "--";
+    });
+
+    // ✅ Nhận câu hỏi mới từ socket
+    socket.on('show-question', async (round) => {
+        currentRound = round;
+        currentIndex = 0;
+        loadQuestion(round);
+    });
+
+    // ✅ Nhận bắt đầu đếm ngược
+    socket.on("start-timer", ({ round, questionId }) => {
+        if (round === currentRound) {
+            startTimer(15);
+        }
+    });
+
+    // ✅ Nhận yêu cầu hiển thị lời giải
+    socket.on("show-answer", ({ round, correctAnswer, explanation }) => {
+        if (round !== currentRound) return;
+
+        const correctBtn = document.getElementById("btn_" + correctAnswer);
+        if (correctBtn) {
+            correctBtn.classList.add("correct-answer");
+        }
+
+        const explain = document.createElement("p");
+        explain.innerText = `📝 Lời giải: ${explanation}`;
+        explain.style.color = 'blue';
+        explain.style.fontStyle = 'italic';
+        explain.style.marginTop = '10px';
+        document.getElementById("answerList").appendChild(explain);
+    });
+
+    // ✅ Đếm ngược
+    function startTimer(seconds) {
+        clearInterval(timerInterval);
+        let timeLeft = seconds;
+        document.getElementById("timer").innerText = timeLeft;
+
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            document.getElementById("timer").innerText = timeLeft;
+
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+            }
+        }, 1000);
+    }
+
+    // ✅ Tải câu hỏi từ API (chỉ để hiển thị)
+    async function loadQuestion(round) {
+        try {
+            const res = await fetch(`http://localhost:3000/api/questions/question/${round}/0`);
+            const q = await res.json();
+
+            correctAnswer = q.CorrectAnswer;
+            document.getElementById("questionIndex").innerText = round;
+            document.getElementById("questionText").innerText = q.Content;
+
+            const container = document.getElementById("answerList");
+            container.innerHTML = ["A", "B", "C", "D"].map(opt => `
+                <div><button id="btn_${opt}" class="btn btn-outline-secondary" disabled>${opt}: ${q["Option" + opt]}</button></div>
+            `).join("");
+        } catch (err) {
+            document.getElementById("questionText").innerText = "❌ Lỗi khi tải câu hỏi.";
+        }
+    }
+</script>

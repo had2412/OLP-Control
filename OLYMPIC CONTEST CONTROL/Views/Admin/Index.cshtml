@@ -17,7 +17,7 @@
 <button onclick="nextQuestion()">Chuyển câu tiếp theo</button>
 <button onclick="showAnswer()">Hiện đáp án</button>
 <button onclick="endRound()">Kết thúc vòng thi</button>
-<button onclick="showStudentAnswers()">Đáp án thí sinh</button>
+<button onclick="showStudentResults()">Kết quả thí sinh</button>
 
 
 
@@ -102,9 +102,7 @@
         alert("Vòng " + currentRound + " đã kết thúc!");
     }
 
-    function showStudentAnswers() {
-        socket.emit("request-user-summary");
+    function showStudentResults() {
+        socket.emit("get-student-results");
     }
-
-
 </script>

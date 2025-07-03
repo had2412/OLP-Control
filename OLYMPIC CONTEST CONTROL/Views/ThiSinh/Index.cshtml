@@ -6,11 +6,14 @@
     <p>Chào mừng, @Session["FullName"]!</p>
 }
 
-<h2>Câu hỏi <span id="questionIndex">--</span>/10</h2>
-<div id="questionText">Đang chờ bắt đầu...</div>
-<div id="answerList"></div>
-<h3>Thời gian còn lại: <span id="timer">--</span> giây</h3>
-<p id="explanationBox" style="display:none; font-style:italic; margin-top:10px; color:blue;"></p>
+<div id="contestArea">
+    <h2>Câu hỏi <span id="questionIndex">--</span>/10</h2>
+    <div id="questionText">Đang chờ bắt đầu...</div>
+    <div id="answerList"></div>
+    <h3>Thời gian còn lại: <span id="timer">--</span> giây</h3>
+    <p id="explanationBox" style="display:none; font-style:italic; margin-top:10px; color:blue;"></p>
+</div>
+
 <div id="summaryBox" style="margin-top:20px;"></div>
 
 <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
@@ -51,32 +54,24 @@
         }
     });
 
-    socket.on("show-answer", ({ round, correctAnswer, explanation }) => {
-        if (round === currentRound) {
-            const correctBtn = document.getElementById("btn_" + correctAnswer);
-            if (correctBtn) {
-                correctBtn.style.border = "5px solid red";
-                correctBtn.style.fontWeight = "bold";
-            }
+    socket.on("summary-all-users", (data) => {
+        document.getElementById("questionText").innerText = "📊 Kết quả tổng hợp thí sinh:";
+        document.getElementById("answerList").innerHTML = "";
+        document.getElementById("timer").innerText = "--";
 
-            const explain = document.createElement("p");
-            explain.innerText = `📝 Lời giải: ${explanation}`;
-            document.getElementById("answerList").appendChild(explain);
-        }
-    });
+        let html = "";
 
-    socket.on("summary-user-answers", (answers) => {
-        let summary = "<h3>📋 Kết quả các câu đã làm:</h3><ul>";
-        answers.forEach((q, index) => {
-            const isCorrect = q.CorrectAnswer === q.SelectedAnswer;
-            summary += `<li><strong>Câu ${index + 1}</strong>: ${isCorrect ? "✅ Đúng" : "❌ Sai"} <br/>
-        <em>Đáp án đúng: ${q.CorrectAnswer} | Bạn chọn: ${q.SelectedAnswer ?? "Không chọn"}</em></li>`;
+        data.forEach((student, i) => {
+            html += `<h4>${i + 1}. ${student.fullName}</h4>`;
+            html += `<p>📝 Tổng: ${student.total} câu | ✅ Đúng: ${student.correct} | ❌ Sai: ${student.total - student.correct} | 🎯 Điểm: ${student.score}</p>`;
+            html += `<ul>`;
+            student.details.forEach(d => {
+                html += `<li><strong>Câu ${d.index}:</strong> ${d.isCorrect ? "✅ Đúng" : "❌ Sai"} - Bạn chọn: ${d.selectedAnswer ?? "Không chọn"} | Đúng: ${d.correctAnswer}</li>`;
+            });
+            html += `</ul><hr/>`;
         });
-        summary += "</ul>";
 
-        const resultBox = document.createElement("div");
-        resultBox.innerHTML = summary;
-        document.body.appendChild(resultBox); // hoặc gắn vào div cụ thể
+        document.getElementById("summaryBox").innerHTML = html;
     });
 
 
@@ -130,8 +125,11 @@
     async function submitAnswer(answer, questionId) {
         if (!canAnswer) return;
         selectedAnswer = answer;
-
+        canAnswer = false;
+        clearInterval(timerInterval);
         document.getElementById("questionText").innerText = `Bạn đã chọn đáp án: ${answer}`;
+        await sendFinalAnswer();
+        highlightCorrect();
     }
 
     async function sendFinalAnswer() {

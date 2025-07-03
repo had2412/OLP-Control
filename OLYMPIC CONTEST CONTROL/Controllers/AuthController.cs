@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -24,13 +22,7 @@ namespace OLYMPIC_CONTEST_CONTROL.Controllers
         {
             using (HttpClient client = new HttpClient())
             {
-                // Tạo dữ liệu JSON để gửi
-                var data = new
-                {
-                    username = username,
-                    password = password
-                };
-
+                var data = new { username, password };
                 var json = JsonConvert.SerializeObject(data);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
@@ -43,27 +35,48 @@ namespace OLYMPIC_CONTEST_CONTROL.Controllers
                         var jsonResponse = await res.Content.ReadAsStringAsync();
                         var user = JsonConvert.DeserializeObject<UserLoginResult>(jsonResponse);
 
-                        // ✅ Lưu vào session
+                        // ✅ Lưu session
                         Session["UserId"] = user.UserId;
                         Session["FullName"] = user.FullName;
                         Session["Role"] = user.Role;
 
-                        return RedirectToAction("Index", "ThiSinh");
+                        // ✅ Điều hướng theo role
+                        var role = user.Role?.ToLower();
+                        if (role == "admin")
+                            return RedirectToAction("Index", "Admin");
+                        else if (role == "thisinh")
+                            return RedirectToAction("Index", "ThiSinh");
+                        else if (role == "mc")
+                            return RedirectToAction("Index", "MC");
+                        else
+                        {
+                            ViewBag.Error = "Vai trò người dùng không hợp lệ.";
+                            return View();
+                        }
                     }
                     else
                     {
-                        ViewBag.Error = "Sai tên đăng nhập hoặc mật khẩu";
+                        ViewBag.Error = "Sai tên đăng nhập hoặc mật khẩu.";
                         return View();
                     }
                 }
                 catch (Exception ex)
                 {
-                    ViewBag.Error = "Lỗi khi kết nối server: " + ex.Message;
+                    ViewBag.Error = "Lỗi kết nối tới server: " + ex.Message;
                     return View();
                 }
             }
         }
+
+        public ActionResult Logout()
+        {
+            Session.Clear();
+            return RedirectToAction("Login");
+        }
+
+
     }
+
 
     public class UserLoginResult
     {

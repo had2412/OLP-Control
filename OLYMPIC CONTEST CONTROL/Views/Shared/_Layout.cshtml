@@ -1,39 +1,122 @@
 ﻿<!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewBag.Title - My ASP.NET Application</title>
-    @Styles.Render("~/Content/css")
-    @Scripts.Render("~/bundles/modernizr")
+    <title>@ViewBag.Title - Olympic Tiếng Anh THCS</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f6f9;
+        }
+
+        .navbar-custom {
+            background-color: #007bff;
+        }
+
+            .navbar-custom .navbar-brand,
+            .navbar-custom .nav-link {
+                color: #fff;
+                font-weight: bold;
+            }
+
+                .navbar-custom .nav-link:hover {
+                    color: #ffe600;
+                }
+
+        .body-content {
+            margin-top: 30px;
+            padding-bottom: 50px;
+        }
+
+        footer {
+            background-color: #343a40;
+            color: white;
+            padding: 15px 0;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        .logout-icon {
+            color: white;
+            font-size: 18px;
+            padding-left: 15px;
+            text-decoration: none;
+        }
+
+            .logout-icon:hover {
+                color: #ffc107;
+            }
+    </style>
+
+    @RenderSection("head", required: false)
 </head>
 <body>
-    <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-sm navbar-custom shadow">
         <div class="container">
-            @Html.ActionLink("Application name", "Index", "Home", new { area = "" }, new { @class = "navbar-brand" })
-            <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" title="Toggle navigation" aria-controls="navbarSupportedContent"
-                    aria-expanded="false" aria-label="Toggle navigation">
+            @Html.ActionLink("🏆 Olympic Tiếng Anh THCS", "Index", "Home", new { area = "" }, new { @class = "navbar-brand" })
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            <div class="collapse navbar-collapse d-sm-inline-flex justify-content-between">
-                <ul class="navbar-nav flex-grow-1">
-                    <li>@Html.ActionLink("Home", "Index", "Home", new { area = "" }, new { @class = "nav-link" })</li>
-                    <li>@Html.ActionLink("About", "About", "Home", new { area = "" }, new { @class = "nav-link" })</li>
-                    <li>@Html.ActionLink("Contact", "Contact", "Home", new { area = "" }, new { @class = "nav-link" })</li>
+
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        @Html.ActionLink("Trang chủ", "Index", "Home", null, new { @class = "nav-link" })
+                    </li>
+
+                    @if (Session["FullName"] != null && Session["Role"]?.ToString() == "ThiSinh")
+                    {
+                        <li class="nav-item">
+                            @Html.ActionLink("Bài thi", "Index", "ThiSinh", null, new { @class = "nav-link" })
+                        </li>
+                    }
+                    @if (Session["FullName"] != null && Session["Role"]?.ToString() == "Admin")
+                    {
+                        <li class="nav-item">
+                            @Html.ActionLink("Quản lý bài thi", "Index", "Admin", null, new { @class = "nav-link" })
+                        </li>
+                    }
+
+                    @if (Session["FullName"] != null)
+                    {
+                        <li class="nav-item">
+                            <span class="nav-link disabled text-light">👤 @Session["FullName"]</span>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link logout-icon" title="Đăng xuất" href="@Url.Action("Logout", "Auth")">
+                                <i class="fas fa-sign-out-alt"></i>
+                            </a>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="nav-item">
+                            @Html.ActionLink("Đăng nhập", "Login", "Auth", null, new { @class = "nav-link" })
+                        </li>
+                    }
                 </ul>
+
             </div>
         </div>
     </nav>
+
     <div class="container body-content">
         @RenderBody()
-        <hr />
-        <footer>
-            <p>&copy; @DateTime.Now.Year - My ASP.NET Application</p>
-        </footer>
     </div>
 
-    @Scripts.Render("~/bundles/jquery")
-    @Scripts.Render("~/bundles/bootstrap")
+    <footer>
+        <div class="container">
+            <p>&copy; @DateTime.Now.Year Cuộc thi Olympic Tiếng Anh dành cho học sinh THCS</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     @RenderSection("scripts", required: false)
 </body>
 </html>

@@ -132,6 +132,8 @@
     <Compile Include="Controllers\AdminController.cs" />
     <Compile Include="Controllers\AuthController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
+    <Compile Include="Controllers\MayChieuController.cs" />
+    <Compile Include="Controllers\MCController.cs" />
     <Compile Include="Controllers\ThiSinhController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
@@ -194,6 +196,8 @@
     <Content Include="Views\Admin\Index.cshtml" />
     <Content Include="Views\Account\Login.cshtml" />
     <Content Include="Views\Auth\Login.cshtml" />
+    <Content Include="Views\MC\Index.cshtml" />
+    <Content Include="Views\MayChieu\Index.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
