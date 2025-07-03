@@ -10,10 +10,22 @@ module.exports = (io) => {
         });
 
         // ✅ Admin bắt đầu vòng thi (broadcast toàn bộ)
-        socket.on('start-round', (round) => {
-            console.log("🟡 Vòng thi bắt đầu:", round);
-            io.emit('round-started', round);
-        });
+        socket.on('start-round', async (round) => {
+    console.log("🟡 Vòng thi bắt đầu:", round);
+
+    // ✅ Xóa toàn bộ dữ liệu cũ trong bảng Answers
+    try {
+        const pool = await poolPromise;
+        await pool.request().query('DELETE FROM Answers');
+        console.log("🧹 Đã xóa toàn bộ dữ liệu trong bảng Answers.");
+    } catch (err) {
+        console.error("❌ Lỗi khi xóa dữ liệu Answers:", err);
+    }
+
+    // Tiếp tục gửi sự kiện như cũ
+    io.emit('round-started', round);
+});
+
 
         // ✅ Admin gửi câu hỏi cho tất cả (nếu muốn broadcast)
         socket.on('show-question', (index) => {
@@ -29,19 +41,26 @@ module.exports = (io) => {
 
 
 //
-       socket.on("request-user-summary", async () => {
+
+socket.on("get-student-results", async () => {
     try {
         const pool = await poolPromise;
 
-        // Lấy toàn bộ user đã trả lời ít nhất 1 câu
+        // 1. Lấy danh sách tất cả thí sinh đã làm bài
         const users = await pool.request().query(`
-            SELECT DISTINCT UserId FROM Answers
+            SELECT DISTINCT U.UserId, U.FullName
+            FROM Answers A
+            JOIN Users U ON A.UserId = U.UserId
         `);
 
-        for (const row of users.recordset) {
-            const userId = row.UserId;
+        const allResults = [];
 
-            const result = await pool.request()
+        for (const user of users.recordset) {
+            const userId = user.UserId;
+            const fullName = user.FullName;
+
+            // 2. Lấy tất cả câu trả lời của user
+            const answers = await pool.request()
                 .input("UserId", userId)
                 .query(`
                     SELECT Q.Content, Q.CorrectAnswer, A.SelectedAnswer
@@ -51,17 +70,37 @@ module.exports = (io) => {
                     ORDER BY A.AnswerTime ASC
                 `);
 
-            // Gửi kết quả về đúng thí sinh
-            io.to("user-" + userId).emit("summary-user-answers", result.recordset);
+            const details = answers.recordset.map((row, idx) => {
+                return {
+                    index: idx + 1,
+                    question: row.Content,
+                    correctAnswer: row.CorrectAnswer,
+                    selectedAnswer: row.SelectedAnswer,
+                    isCorrect: row.CorrectAnswer === row.SelectedAnswer
+                };
+            });
+
+            const total = details.length;
+            const correct = details.filter(d => d.isCorrect).length;
+            const score = correct * 10;
+
+            allResults.push({
+                fullName,
+                total,
+                correct,
+                score,
+                details
+            });
         }
 
-        console.log("📤 Gửi kết quả đáp án đã chọn cho thí sinh");
+        // 3. Gửi kết quả về tất cả client (hoặc socket.to("room") nếu cần riêng)
+        io.emit("summary-all-users", allResults);
+
+        console.log("✅ Đã gửi kết quả tổng hợp thí sinh.");
     } catch (err) {
-        console.error("❌ Lỗi khi tổng kết điểm:", err);
+        console.error("❌ Lỗi khi tổng kết thí sinh:", err);
     }
 });
-
-
 
 
         // ✅ Nhận và broadcast đáp án (nếu cần)
