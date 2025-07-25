@@ -9,7 +9,29 @@ namespace OLYMPIC_CONTEST_CONTROL.Controllers
     public class ThiSinhController : Controller
     {
         // GET: ThiSinh
-        public ActionResult Index()
+        public ActionResult VongMot()
+        {
+            if (Session["UserId"] == null)
+            {
+                return RedirectToAction("Login", "Auth");
+            }
+
+            ViewBag.FullName = Session["FullName"];
+            return View();
+        }
+
+        public ActionResult VongHai()
+        {
+            if (Session["UserId"] == null)
+            {
+                return RedirectToAction("Login", "Auth");
+            }
+
+            ViewBag.FullName = Session["FullName"];
+            return View();
+        }
+
+        public ActionResult VongBa()
         {
             if (Session["UserId"] == null)
             {

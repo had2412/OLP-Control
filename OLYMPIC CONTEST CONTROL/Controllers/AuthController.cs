@@ -43,9 +43,9 @@ namespace OLYMPIC_CONTEST_CONTROL.Controllers
                         // ✅ Điều hướng theo role
                         var role = user.Role?.ToLower();
                         if (role == "admin")
-                            return RedirectToAction("Index", "Admin");
+                            return RedirectToAction("VongMot", "Admin");
                         else if (role == "thisinh")
-                            return RedirectToAction("Index", "ThiSinh");
+                            return RedirectToAction("VongMot", "ThiSinh");
                         else if (role == "mc")
                             return RedirectToAction("Index", "MC");
                         else

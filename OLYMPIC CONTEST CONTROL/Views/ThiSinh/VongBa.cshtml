@@ -1,0 +1,121 @@
+﻿@{
+    ViewBag.Title = "Vòng 3 - Thí sinh";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Vòng 3 - Thí sinh</h2>
+
+<div id="package-selection">
+    <p>📦 Chọn gói câu hỏi:</p>
+    <button id="btn40">Gói 40 điểm</button>
+    <button id="btn60">Gói 60 điểm</button>
+    <button id="btn80">Gói 80 điểm</button>
+</div>
+
+<div id="question-box" style="display:none;">
+    <p><strong>Câu <span id="question-order"></span>:</strong> <span id="question-content"></span></p>
+    <ul>
+        <li><button id="btnA"></button></li>
+        <li><button id="btnB"></button></li>
+        <li><button id="btnC"></button></li>
+        <li><button id="btnD"></button></li>
+    </ul>
+    <button id="star-button">Dùng ngôi sao hy vọng ⭐</button>
+    <p id="timer">⏱ Thời gian: <span id="countdown">30</span>s</p>
+</div>
+
+@section Scripts {
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const userId = sessionStorage.getItem("userId") || "1";
+        const fullName = sessionStorage.getItem("fullName") || "HoangAnhDung";
+        let isStarUsed = false;
+        let currentQuestionId = null;
+
+        // Gửi sự kiện khi vào vòng 3
+        socket.emit("join-room", userId, fullName);
+
+        // Hàm chọn gói
+        function selectPackage(points) {
+            socket.emit("v3-select-package", { userId, fullName, points });
+            document.getElementById("package-selection").style.display = "none";
+            document.getElementById("question-box").style.display = "block";
+        }
+
+        // Gán sự kiện cho nút chọn gói
+        document.getElementById("btn40").addEventListener("click", () => selectPackage(40));
+        document.getElementById("btn60").addEventListener("click", () => selectPackage(60));
+        document.getElementById("btn80").addEventListener("click", () => selectPackage(80));
+
+        // Sự kiện nhận câu hỏi
+        socket.on("v3-show-question", (data) => {
+            currentQuestionId = data.QuestionId;
+            document.getElementById("question-order").innerText = data.Order;
+            document.getElementById("question-content").innerText = data.Content;
+            document.getElementById("btnA").innerText = "A. " + data.OptionA;
+            document.getElementById("btnB").innerText = "B. " + data.OptionB;
+            document.getElementById("btnC").innerText = "C. " + data.OptionC;
+            document.getElementById("btnD").innerText = "D. " + data.OptionD;
+            enableButtons();
+            startTimer();
+        });
+
+        // Gửi đáp án
+        function submitAnswer(answer) {
+            disableButtons();
+            socket.emit("v3-submit-answer", {
+                userId,
+                questionId: currentQuestionId,
+                selectedAnswer: answer,
+                isStar: isStarUsed
+            });
+            isStarUsed = false;
+        }
+
+        // Gán sự kiện cho các nút đáp án
+        document.getElementById("btnA").addEventListener("click", () => submitAnswer("A"));
+        document.getElementById("btnB").addEventListener("click", () => submitAnswer("B"));
+        document.getElementById("btnC").addEventListener("click", () => submitAnswer("C"));
+        document.getElementById("btnD").addEventListener("click", () => submitAnswer("D"));
+
+        // Ngôi sao hy vọng
+        document.getElementById("star-button").addEventListener("click", () => {
+            isStarUsed = true;
+            alert("✅ Đã dùng ngôi sao hy vọng cho câu này!");
+        });
+
+        function disableButtons() {
+            ["btnA", "btnB", "btnC", "btnD"].forEach(id => {
+                document.getElementById(id).disabled = true;
+            });
+        }
+
+        function enableButtons() {
+            ["btnA", "btnB", "btnC", "btnD"].forEach(id => {
+                document.getElementById(id).disabled = false;
+            });
+        }
+
+        // Đồng hồ đếm ngược
+        function startTimer() {
+            let time = 30;
+            document.getElementById("countdown").innerText = time;
+            const interval = setInterval(() => {
+                time--;
+                document.getElementById("countdown").innerText = time;
+                if (time <= 0) {
+                    clearInterval(interval);
+                    disableButtons();
+                    socket.emit("v3-submit-answer", {
+                        userId,
+                        questionId: currentQuestionId,
+                        selectedAnswer: null,
+                        isStar: isStarUsed
+                    });
+                    isStarUsed = false;
+                }
+            }, 1000);
+        }
+    </script>
+}

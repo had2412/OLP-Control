@@ -192,12 +192,17 @@
     <Content Include="Views\Home\About.cshtml" />
     <Content Include="Views\Home\Contact.cshtml" />
     <Content Include="Views\Home\Index.cshtml" />
-    <Content Include="Views\ThiSinh\Index.cshtml" />
-    <Content Include="Views\Admin\Index.cshtml" />
     <Content Include="Views\Account\Login.cshtml" />
     <Content Include="Views\Auth\Login.cshtml" />
     <Content Include="Views\MC\Index.cshtml" />
     <Content Include="Views\MayChieu\Index.cshtml" />
+    <Content Include="Views\Admin\Questions.cshtml" />
+    <Content Include="Views\ThiSinh\VongMot.cshtml" />
+    <Content Include="Views\ThiSinh\VongHai.cshtml" />
+    <Content Include="Views\Admin\VongMot.cshtml" />
+    <Content Include="Views\Admin\VongHai.cshtml" />
+    <Content Include="Views\Admin\VongBa.cshtml" />
+    <Content Include="Views\ThiSinh\VongBa.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

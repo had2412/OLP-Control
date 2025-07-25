@@ -28,6 +28,28 @@
     let timerInterval;
     let correctAnswer = null;
     let selectedAnswer = null;
+    let startTime = null;
+    let lastSelectedTime = null;
+
+    function startTimer(seconds, questionId) {
+        clearInterval(timerInterval);
+        let timeLeft = seconds;
+        startTime = Date.now(); // ✅ Lưu thời gian bắt đầu
+
+        document.getElementById("timer").innerText = timeLeft;
+
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            document.getElementById("timer").innerText = timeLeft;
+
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                canAnswer = false;
+                highlightCorrect();
+                sendFinalAnswer();
+            }
+        }, 1000);
+    }
 
     socket.emit("join-room", userId);
 
@@ -55,24 +77,60 @@
     });
 
     socket.on("summary-all-users", (data) => {
-        document.getElementById("questionText").innerText = "📊 Kết quả tổng hợp thí sinh:";
-        document.getElementById("answerList").innerHTML = "";
-        document.getElementById("timer").innerText = "--";
+        // Ẩn khu vực làm bài
+        document.getElementById("contestArea").style.display = "none";
 
-        let html = "";
+        let html = `
+        <h3>📊 Kết quả tổng hợp thí sinh</h3>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped table-hover align-middle">
+                <thead class="table-primary text-center">
+                    <tr>
+                        <th>#</th>
+                        <th>Tên thí sinh</th>
+                        <th>Tổng câu</th>
+                        <th>Đúng</th>
+                        <th>Sai</th>
+                        <th>Điểm</th>
+                        <th>⏱ Thời gian (giây)</th>
+                        <th>Chi tiết</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
 
         data.forEach((student, i) => {
-            html += `<h4>${i + 1}. ${student.fullName}</h4>`;
-            html += `<p>📝 Tổng: ${student.total} câu | ✅ Đúng: ${student.correct} | ❌ Sai: ${student.total - student.correct} | 🎯 Điểm: ${student.score}</p>`;
-            html += `<ul>`;
-            student.details.forEach(d => {
-                html += `<li><strong>Câu ${d.index}:</strong> ${d.isCorrect ? "✅ Đúng" : "❌ Sai"} - Bạn chọn: ${d.selectedAnswer ?? "Không chọn"} | Đúng: ${d.correctAnswer}</li>`;
-            });
-            html += `</ul><hr/>`;
+            // Tính tổng thời gian làm bài
+            const totalTime = student.details.reduce((sum, d) => sum + (d.timeTaken || 0), 0);
+
+            const detailHtml = student.details.map(d => {
+                return `<div>Câu ${d.index}: ${d.isCorrect ? '✅' : '❌'} - Chọn: <strong>${d.selectedAnswer ?? 'Không chọn'}</strong>, Đúng: ${d.correctAnswer}, ⏱ ${d.timeTaken ?? "--"}s</div>`;
+            }).join("");
+
+            html += `
+            <tr>
+                <td class="text-center">${i + 1}</td>
+                <td>${student.fullName}</td>
+                <td class="text-center">${student.total}</td>
+                <td class="text-success text-center">${student.correct}</td>
+                <td class="text-danger text-center">${student.total - student.correct}</td>
+                <td class="fw-bold text-center">${student.score}</td>
+                <td class="text-center text-primary">${totalTime}s</td>
+                <td>${detailHtml}</td>
+            </tr>
+        `;
         });
+
+        html += `
+                </tbody>
+            </table>
+        </div>
+    `;
 
         document.getElementById("summaryBox").innerHTML = html;
     });
+
+
 
 
     async function loadQuestion(round) {
@@ -104,37 +162,32 @@
         }
     }
 
-    function startTimer(seconds, questionId) {
-        clearInterval(timerInterval);
-        let timeLeft = seconds;
-        document.getElementById("timer").innerText = timeLeft;
 
-        timerInterval = setInterval(() => {
-            timeLeft--;
-            document.getElementById("timer").innerText = timeLeft;
-
-            if (timeLeft <= 0) {
-                clearInterval(timerInterval);
-                canAnswer = false;
-                highlightCorrect();
-                sendFinalAnswer();
-            }
-        }, 1000);
-    }
 
     async function submitAnswer(answer, questionId) {
-        if (!canAnswer) return;
-        selectedAnswer = answer;
-        canAnswer = false;
-        clearInterval(timerInterval);
-        document.getElementById("questionText").innerText = `Bạn đã chọn đáp án: ${answer}`;
-        await sendFinalAnswer();
-        highlightCorrect();
-    }
+    if (!canAnswer) return;
+
+    selectedAnswer = answer;
+    lastSelectedTime = Date.now(); // ✅ Cập nhật thời gian chọn cuối cùng
+
+    // Highlight lựa chọn
+    ["A", "B", "C", "D"].forEach(opt => {
+        const btn = document.getElementById("btn_" + opt);
+        if (btn) {
+            btn.style.backgroundColor = (opt === answer) ? "#ffeaa7" : "";
+        }
+    });
+
+    document.getElementById("questionText").innerText = `Bạn đã chọn đáp án: ${answer}`;
+}
+
+
 
     async function sendFinalAnswer() {
-        if (selectedAnswer === null) {
-            document.getElementById("questionText").innerText = "Bạn không chọn đáp án nào.";
+        let timeTaken = 15; // Mặc định nếu không chọn
+
+        if (selectedAnswer !== null && lastSelectedTime !== null) {
+            timeTaken = Math.floor((lastSelectedTime - startTime) / 1000);
         }
 
         try {
@@ -144,13 +197,15 @@
                 body: JSON.stringify({
                     userId: userId,
                     questionId: currentQuestionId,
-                    selectedAnswer: selectedAnswer
+                    selectedAnswer: selectedAnswer,
+                    timeTaken: timeTaken
                 })
             });
         } catch (err) {
             console.error("❌ Lỗi khi gửi đáp án:", err);
         }
     }
+
 
     function highlightCorrect() {
         if (!correctAnswer) return;
@@ -168,4 +223,20 @@
     socket.on("display-results", () => {
         alert("📊 Tổng kết điểm sẽ hiển thị ở đây!");
     });
+
+    socket.on("clear-student-summary", () => {
+        // Xóa nội dung kết quả
+        document.getElementById("summaryBox").innerHTML = "";
+
+        // 👉 THÊM các dòng sau để khôi phục giao diện câu hỏi
+        document.getElementById("questionText").innerText = "Đang chờ bắt đầu...";
+        document.getElementById("answerList").innerHTML = "";
+        document.getElementById("timer").innerText = "--";
+        document.getElementById("explanationBox").style.display = "none";
+
+        // Nếu bạn có ẩn contestArea khi hiển thị kết quả thì cũng bật lại
+        document.getElementById("contestArea").style.display = "block";
+    });
+
+
 </script>

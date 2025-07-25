@@ -1,0 +1,108 @@
+﻿@{
+    ViewBag.Title = "Quản lý Câu hỏi";
+}
+
+<h2>Quản lý Câu hỏi</h2>
+
+<button onclick="loadQuestions()" class="btn btn-primary mb-3">Tải lại danh sách</button>
+<table class="table table-bordered" id="questionsTable">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Vòng</th>
+            <th>Nội dung</th>
+            <th>Đáp án đúng</th>
+            <th>Thao tác</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<!-- Form Thêm / Sửa -->
+<h3 id="formTitle">Thêm câu hỏi mới</h3>
+<form onsubmit="saveQuestion(event)">
+    <input type="hidden" id="questionId" />
+    <div class="mb-2">
+        <label>Vòng:</label>
+        <input type="number" id="round" class="form-control" required />
+    </div>
+    <div class="mb-2">
+        <label>Nội dung câu hỏi:</label>
+        <textarea id="content" class="form-control" required></textarea>
+    </div>
+    <div class="mb-2">
+        <label>Câu trả lời của ABCD:</label>
+        <input type="text" id="optionA" class="form-control mb-1" placeholder="A" />
+        <input type="text" id="optionB" class="form-control mb-1" placeholder="B" />
+        <input type="text" id="optionC" class="form-control mb-1" placeholder="C" />
+        <input type="text" id="optionD" class="form-control mb-1" placeholder="D" />
+        <input type="text" id="correctAnswer" class="form-control" placeholder="Đáp án đúng (A/B/C/D)" />
+    </div>
+    <button type="submit" class="btn btn-success">Lưu</button>
+</form>
+
+<script>
+    async function loadQuestions() {
+        const res = await fetch("http://localhost:3000/api/questions/all");
+        const data = await res.json();
+        const tbody = document.querySelector("#questionsTable tbody");
+        tbody.innerHTML = data.map(q => `
+            <tr>
+                <td>${q.QuestionId}</td>
+                <td>${q.Round}</td>
+                <td>${q.Content}</td>
+                <td>${q.CorrectAnswer}</td>
+                <td>
+                    <button onclick='editQuestion(${JSON.stringify(q)})' class="btn btn-sm btn-warning">Sửa</button>
+                    <button onclick='deleteQuestion(${q.QuestionId})' class="btn btn-sm btn-danger">Xóa</button>
+                </td>
+            </tr>
+        `).join("");
+    }
+
+    function editQuestion(q) {
+        document.getElementById("formTitle").innerText = "Chỉnh sửa câu hỏi";
+        document.getElementById("questionId").value = q.QuestionId;
+        document.getElementById("round").value = q.Round;
+        document.getElementById("content").value = q.Content;
+        document.getElementById("optionA").value = q.OptionA;
+        document.getElementById("optionB").value = q.OptionB;
+        document.getElementById("optionC").value = q.OptionC;
+        document.getElementById("optionD").value = q.OptionD;
+        document.getElementById("correctAnswer").value = q.CorrectAnswer;
+    }
+
+    async function saveQuestion(event) {
+        event.preventDefault();
+        const id = document.getElementById("questionId").value;
+        const method = id ? "PUT" : "POST";
+        const url = `http://localhost:3000/api/questions${id ? '/' + id : ''}`;
+        const body = {
+            Round: document.getElementById("round").value,
+            Content: document.getElementById("content").value,
+            OptionA: document.getElementById("optionA").value,
+            OptionB: document.getElementById("optionB").value,
+            OptionC: document.getElementById("optionC").value,
+            OptionD: document.getElementById("optionD").value,
+            CorrectAnswer: document.getElementById("correctAnswer").value
+        };
+        await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        alert("✅ Lưu thành công!");
+        loadQuestions();
+    }
+
+    async function deleteQuestion(id) {
+        if (!confirm("Bạn có chắc muốn xóa câu hỏi này?")) return;
+        await fetch(`http://localhost:3000/api/questions/${id}`, {
+            method: "DELETE"
+        });
+        alert("🗑 Đã xóa!");
+        loadQuestions();
+    }
+
+    loadQuestions();
+</script>

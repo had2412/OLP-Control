@@ -1,0 +1,259 @@
+﻿@{
+    ViewBag.Title = "Vòng 2 - Giành quyền trả lời";
+}
+
+<style>
+    table.table-sm td, table.table-sm th {
+        padding: 4px;
+        font-size: 0.85em;
+        text-align: center;
+    }
+</style>
+
+<h2>🎯 Điều khiển vòng 2 - Giành quyền trả lời</h2>
+
+<p><strong>Câu hiện tại:</strong> <span id="questionNumber">--</span></p>
+<p><strong>Nội dung:</strong> <span id="questionContent">---</span></p>
+<div id="answerOptions"></div>
+<p><strong>Đáp án đúng:</strong> <span id="correctAnswer">--</span></p>
+<p><strong>Lời giải:</strong> <span id="explanation">--</span></p>
+
+<p><strong>Người giành quyền:</strong> <span id="winnerName">--</span></p>
+<p><strong>Thời gian còn lại:</strong> <span id="timer">--</span> giây</p>
+
+<!-- Nút điều khiển -->
+<div class="mb-3">
+    <button onclick="startRound2()" class="btn btn-primary">🚀 Bắt đầu vòng 2</button>
+    <button onclick="loadNextQuestion()">➡️ Câu tiếp theo</button>
+    <button onclick="requestStudentList()" class="btn btn-success">✅ Xác nhận người giành quyền</button>
+    <button onclick="startAnswerTimer()">⏱ Bắt đầu đếm 30s</button>
+    <button onclick="endAnswer()">⛔ Kết thúc lượt</button>
+    <button onclick="submitScore()">📝 Chấm điểm</button>
+    <button onclick="getRound2Results()">📊 Xem kết quả thí sinh</button>
+</div>
+
+<!-- Danh sách thí sinh -->
+<div>
+    <h4>📋 Danh sách thí sinh đang kết nối:</h4>
+    <ul id="studentList"></ul>
+</div>
+
+<!-- Kết quả vòng 2 -->
+<div id="resultContainer" style="display: none;">
+    <h4>📈 Bảng kết quả vòng 2:</h4>
+    <table class="table table-bordered" id="resultTable">
+        <thead>
+            <tr>
+                <th>Họ tên</th>
+                <th>Số câu</th>
+                <th>Đúng</th>
+                <th>Điểm</th>
+                <th>Chi tiết</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+
+<script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+<script>
+    const socket = io("http://localhost:3000");
+
+    let currentQuestionIndex = 0;
+    let currentQuestion = null;
+    let currentWinner = null;
+
+    function startRound2() {
+        currentQuestionIndex = 0;
+        socket.emit("start-round", 2); // Xóa dữ liệu Round2Answer
+        loadRound2Question(currentQuestionIndex);
+    }
+
+    function loadNextQuestion() {
+        currentQuestionIndex++;
+        loadRound2Question(currentQuestionIndex);
+    }
+
+    function loadRound2Question(index) {
+        fetch(`http://localhost:3000/api/questions/round2/${index}`)
+            .then(res => res.json())
+            .then(q => {
+                currentQuestion = q;
+                document.getElementById("questionNumber").innerText = index + 1;
+                document.getElementById("questionContent").innerText = q.Content;
+
+                const div = document.getElementById("answerOptions");
+                div.innerHTML = ["A", "B", "C", "D"].map(opt => `
+                    <div><strong>${opt}:</strong> ${q["Option" + opt]}</div>
+                `).join("");
+
+                document.getElementById("correctAnswer").innerText = q.CorrectAnswer || "--";
+                document.getElementById("explanation").innerText = q.Explanation || "--";
+
+                socket.emit("v2-show-question", q);
+                currentWinner = null;
+                document.getElementById("winnerName").innerText = "--";
+                document.getElementById("timer").innerText = "--";
+            })
+            .catch(err => {
+                console.error("❌", err);
+                alert("Không thể tải câu hỏi vòng 2.");
+            });
+    }
+
+    function requestStudentList() {
+        socket.emit("v2-request-students");
+    }
+
+    socket.on("v2-student-list", (students) => {
+        const ul = document.getElementById("studentList");
+        ul.innerHTML = students.map(u => `
+            <li>
+                <button onclick="selectWinner('${u.id}', '${u.name}')">
+                    🎯 ${u.name} (ID: ${u.id})
+                </button>
+            </li>
+        `).join("");
+    });
+
+    function selectWinner(userId, name) {
+        currentWinner = { id: userId, name };
+        document.getElementById("winnerName").innerText = name;
+        socket.emit("v2-confirm-winner", currentWinner);
+        alert(`✅ Đã chọn ${name} giành quyền trả lời`);
+    }
+
+    function startAnswerTimer() {
+        let timeLeft = 30;
+        document.getElementById("timer").innerText = timeLeft;
+
+        const interval = setInterval(() => {
+            timeLeft--;
+            document.getElementById("timer").innerText = timeLeft;
+            if (timeLeft <= 0) clearInterval(interval);
+        }, 1000);
+
+        socket.emit("v2-start-timer", { duration: 30, winner: currentWinner });
+    }
+
+    function endAnswer() {
+        socket.emit("v2-end-turn", currentWinner);
+        alert("⛔ Đã kết thúc lượt trả lời");
+    }
+
+    function submitScore() {
+        if (!currentWinner?.id) {
+            alert("⚠️ Bạn chưa chọn người giành quyền!");
+            return;
+        }
+
+        const score = prompt("Nhập điểm (0-10):");
+        if (!score || isNaN(score)) {
+            alert("⚠️ Điểm không hợp lệ!");
+            return;
+        }
+
+        socket.emit("v2-submit-score", {
+            userId: currentWinner.id,
+            score: parseInt(score)
+        });
+
+        alert("✅ Đã gửi điểm cho " + currentWinner.name);
+    }
+
+    function getRound2Results() {
+        // Gửi yêu cầu lấy dữ liệu
+        socket.emit("v2-get-results");
+
+        // Hiện bảng kết quả nếu đang ẩn
+        const resultDiv = document.getElementById("resultContainer");
+        if (resultDiv.style.display === "none") {
+            resultDiv.style.display = "block";
+        }
+    }
+
+
+    socket.on("v2-summary-all-users", (data) => {
+        const tbody = document.querySelector("#resultTable tbody");
+        tbody.innerHTML = "";
+
+        data.forEach(user => {
+            const detailRows = user.details.map(d => `
+            <tr>
+                <td>Câu ${d.index}</td>
+                <td>${d.selectedAnswer || "Chưa trả lời"}</td>
+                <td>${d.isCorrect ? "✅ Đúng" : "❌ Sai"}</td>
+                <td>${d.score ?? 0}</td>
+            </tr>
+        `).join("");
+
+            const row = document.createElement("tr");
+            row.innerHTML = `
+            <td>${user.fullName}</td>
+            <td>${user.total}</td>
+            <td>${user.correct}</td>
+            <td>${user.totalScore}</td>
+            <td>
+                <table class="table table-sm table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Câu</th>
+                            <th>Đáp án chọn</th>
+                            <th>Đúng/Sai</th>
+                            <th>Điểm</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${detailRows}
+                    </tbody>
+                </table>
+            </td>
+        `;
+            tbody.appendChild(row);
+        });
+    });
+
+
+    socket.on("v2-result-table", (results) => {
+        const tbody = document.querySelector("#resultTable tbody");
+        tbody.innerHTML = "";
+
+        results.forEach(r => {
+            const detailTable = `
+            <table class="table table-bordered table-sm">
+                <thead>
+                    <tr>
+                        <th>Câu</th>
+                        <th>Đáp án chọn</th>
+                        <th>Đúng/Sai</th>
+                        <th>Điểm</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${r.details.map(d => `
+                        <tr>
+                            <td>${d.index}</td>
+                            <td>${d.selectedAnswer || "Chưa trả lời"}</td>
+                            <td>${d.isCorrect ? "✅ Đúng" : "❌ Sai"}</td>
+                            <td>${d.score ?? 0}</td>
+                        </tr>
+                    `).join("")}
+                </tbody>
+            </table>
+        `;
+
+            const row = document.createElement("tr");
+            row.innerHTML = `
+            <td>${r.fullName}</td>
+            <td>${r.total}</td>
+            <td>${r.correct}</td>
+            <td>${r.score}</td>
+            <td>${detailTable}</td>
+        `;
+            tbody.appendChild(row);
+        });
+    });
+
+
+</script>

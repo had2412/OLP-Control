@@ -1,0 +1,131 @@
+﻿@{
+    ViewBag.Title = "Vòng 2 - Thí sinh";
+    var userId = Session["UserId"];
+    var fullName = Session["FullName"];
+}
+
+<h2>📝 Câu hỏi vòng 2</h2>
+<p><strong>Nội dung:</strong> <span id="questionText">Đang chờ câu hỏi...</span></p>
+
+<form id="answerForm" onsubmit="return submitAnswer()" style="display:none;">
+    <div id="answerOptions"></div>
+    <br />
+    <button type="submit" class="btn btn-success">🔽 Gửi đáp án</button>
+</form>
+
+<h3 id="buzzInfo">Chưa ai giành quyền</h3>
+<h4>⏱ Thời gian còn lại: <span id="timer">--</span> giây</h4>
+
+<script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+<script>
+    const socket = io("http://localhost:3000");
+
+    const userId = '@userId';
+    const fullName = '@fullName';
+
+    let isWinner = false;
+    let currentQuestionId = null;
+    let canAnswer = false;
+    let hasSubmitted = false;
+    let countdownInterval = null;
+
+    socket.emit("join-room", userId, fullName);
+
+    socket.on("v2-show-question", (q) => {
+        currentQuestionId = q.QuestionId;
+        isWinner = false;
+        canAnswer = false;
+        hasSubmitted = false;
+
+        document.getElementById("questionText").innerText = q.Content;
+        document.getElementById("buzzInfo").innerText = "Chờ ai bấm chuông giành quyền...";
+        document.getElementById("timer").innerText = "--";
+
+        const div = document.getElementById("answerOptions");
+        div.innerHTML = ["A", "B", "C", "D"].map(opt => `
+            <label>
+                <input type="radio" name="selected" value="${opt}" />
+                ${opt}: ${q["Option" + opt]}
+            </label><br/>
+        `).join("");
+
+        document.getElementById("answerForm").style.display = "none";
+    });
+
+    socket.on("v2-confirm-winner", (winner) => {
+        document.getElementById("buzzInfo").innerText = `${winner.name} đã giành quyền trả lời!`;
+
+        if (winner.id == userId) {
+            isWinner = true;
+            canAnswer = false;
+            hasSubmitted = false;
+            document.getElementById("answerForm").style.display = "block";
+        } else {
+            isWinner = false;
+            document.getElementById("answerForm").style.display = "none";
+        }
+    });
+
+    socket.on("v2-start-timer", (data) => {
+        startAnswerTimer(data.duration || 30);
+    });
+
+    socket.on("v2-end-turn", () => {
+        isWinner = false;
+        canAnswer = false;
+        hasSubmitted = false;
+        clearInterval(countdownInterval);
+
+        document.getElementById("questionText").innerText = "Chờ câu hỏi tiếp theo...";
+        document.getElementById("answerOptions").innerHTML = "";
+        document.getElementById("answerForm").style.display = "none";
+        document.getElementById("buzzInfo").innerText = "Chưa ai giành quyền";
+        document.getElementById("timer").innerText = "--";
+    });
+
+    function startAnswerTimer(seconds) {
+        let timeLeft = seconds;
+        document.getElementById("timer").innerText = timeLeft;
+        canAnswer = true;
+        countdownInterval = setInterval(() => {
+            timeLeft--;
+            document.getElementById("timer").innerText = timeLeft;
+
+            if (timeLeft <= 0) {
+                clearInterval(countdownInterval);
+                canAnswer = false;
+
+                if (isWinner && !hasSubmitted) {
+                    sendAnswer(null); // gửi null nếu chưa chọn
+                    alert("⏱ Hết giờ! Bạn không kịp chọn đáp án.");
+                    document.getElementById("answerForm").style.display = "none";
+                }
+            }
+        }, 1000);
+    }
+
+    function submitAnswer() {
+        event.preventDefault();
+        if (!isWinner || !canAnswer || hasSubmitted) return false;
+
+        const selected = document.querySelector('input[name="selected"]:checked');
+        const answer = selected ? selected.value : null;
+
+        sendAnswer(answer);
+        alert("✅ Đã gửi đáp án: " + (answer || "Không chọn"));
+
+        document.getElementById("answerForm").style.display = "none";
+        return false;
+    }
+
+    function sendAnswer(answer) {
+        hasSubmitted = true;
+
+        socket.emit("v2-submit-answer", {
+            userId,
+            fullName,
+            questionId: currentQuestionId,
+            answer: answer // có thể là null
+        });
+    }
+</script>

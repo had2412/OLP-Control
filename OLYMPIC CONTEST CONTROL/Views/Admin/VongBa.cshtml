@@ -1,0 +1,125 @@
+﻿@{
+    ViewBag.Title = "Vòng 3 - Admin Điều Khiển";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>🎛️ Điều khiển Vòng 3</h2>
+
+<div class="mb-3">
+    <label for="selectUser">🧑‍🎓 Chọn thí sinh:</label>
+    <select id="selectUser" class="form-control"></select>
+</div>
+
+<div class="mb-3">
+    <label for="packageSelect">🎁 Chọn gói câu hỏi:</label>
+    <select id="packageSelect" class="form-control">
+        <option value="40">Gói 40 điểm</option>
+        <option value="60">Gói 60 điểm</option>
+        <option value="80">Gói 80 điểm</option>
+    </select>
+    <button id="btnSelectPackage" class="btn btn-primary mt-2">Chọn Gói</button>
+</div>
+
+<hr />
+
+<h4>📄 Câu hỏi <span id="currentOrder">1</span></h4>
+<div id="questionContent" class="border p-3 bg-light mb-2">[Câu hỏi sẽ hiển thị ở đây]</div>
+<ul id="adminOptions" class="list-group mb-3">
+    <li class="list-group-item" id="adminOptionA">A. ...</li>
+    <li class="list-group-item" id="adminOptionB">B. ...</li>
+    <li class="list-group-item" id="adminOptionC">C. ...</li>
+    <li class="list-group-item" id="adminOptionD">D. ...</li>
+</ul>
+
+<div id="timer" class="mb-3">⏱ Thời gian: <span id="timeLeft">30</span> giây</div>
+
+<div class="form-group">
+    <button id="btnStartTimer" class="btn btn-success">▶️ Bắt đầu câu hỏi</button>
+    <button id="btnUseStar" class="btn btn-warning">⭐ Xác nhận Ngôi sao hy vọng</button>
+    <button id="btnEndTurn" class="btn btn-danger">⛔ Kết thúc lượt</button>
+</div>
+
+<div class="mt-4">
+    <h5>📊 Kết quả câu hỏi</h5>
+    <p>Thí sinh chọn: <span id="adminSelectedAnswer">?</span></p>
+    <p>Đáp án đúng: <span id="adminCorrectAnswer">?</span></p>
+    <p>Kết quả: <span id="adminIsCorrect">?</span></p>
+    <p>Sử dụng Ngôi sao: <span id="adminIsStar">?</span></p>
+    <p>Điểm: <span id="adminScore">?</span></p>
+</div>
+
+@section scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+        let currentUserId = null;
+
+        // Lấy danh sách thí sinh đang online
+        socket.emit("v2-request-students");
+        socket.on("v2-student-list", (list) => {
+            const select = document.getElementById("selectUser");
+            list.forEach(s => {
+                const opt = document.createElement("option");
+                opt.value = s.id;
+                opt.textContent = s.name;
+                select.appendChild(opt);
+            });
+        });
+
+        // Chọn gói câu hỏi
+        document.getElementById("btnSelectPackage").addEventListener("click", () => {
+            const userId = document.getElementById("selectUser").value;
+            const fullName = document.getElementById("selectUser").selectedOptions[0].textContent;
+            const points = parseInt(document.getElementById("packageSelect").value);
+            currentUserId = userId;
+
+            socket.emit("v3-select-package", { userId, fullName, points });
+        });
+
+        // Nhận câu hỏi đầu tiên
+        socket.on("v3-show-question", (q) => {
+            document.getElementById("questionContent").textContent = q.Content;
+            document.getElementById("adminOptionA").textContent = "A. " + q.OptionA;
+            document.getElementById("adminOptionB").textContent = "B. " + q.OptionB;
+            document.getElementById("adminOptionC").textContent = "C. " + q.OptionC;
+            document.getElementById("adminOptionD").textContent = "D. " + q.OptionD;
+            document.getElementById("currentOrder").textContent = q.Order;
+        });
+
+        // Bắt đầu đếm giờ
+        document.getElementById("btnStartTimer").addEventListener("click", () => {
+            socket.emit("v3-start-timer", { duration: 30, questionIndex: parseInt(document.getElementById("currentOrder").textContent) });
+        });
+
+        // Ngôi sao hy vọng
+        document.getElementById("btnUseStar").addEventListener("click", () => {
+            const qIndex = parseInt(document.getElementById("currentOrder").textContent);
+            socket.emit("v3-confirm-star", { userId: currentUserId, questionIndex: qIndex });
+        });
+
+        // Kết thúc lượt
+        document.getElementById("btnEndTurn").addEventListener("click", () => {
+            socket.emit("v3-end-turn");
+        });
+
+        // Hiển thị kết quả
+        socket.on("v3-answer-result", ({ userId, questionId, selectedAnswer, isCorrect, isStar, score }) => {
+            if (userId !== currentUserId) return;
+            document.getElementById("adminSelectedAnswer").textContent = selectedAnswer || "Không trả lời";
+            document.getElementById("adminIsCorrect").textContent = isCorrect ? "✅ Đúng" : "❌ Sai";
+            document.getElementById("adminIsStar").textContent = isStar ? "⭐ Có" : "Không";
+            document.getElementById("adminScore").textContent = score + " điểm";
+        });
+
+        // Đếm giờ realtime
+        socket.on("v3-start-timer", ({ duration }) => {
+            let time = duration;
+            document.getElementById("timeLeft").textContent = time;
+            const timerInterval = setInterval(() => {
+                time--;
+                document.getElementById("timeLeft").textContent = time;
+                if (time <= 0) clearInterval(timerInterval);
+            }, 1000);
+        });
+    </script>
+}

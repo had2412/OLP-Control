@@ -9,6 +9,16 @@
 <div id="answerOptions"></div>
 <p><strong>Đáp án đúng:</strong> <span id="correctAnswer">--</span></p>
 <p><strong>Lời giải:</strong> <span id="explanation">--</span></p>
+<p><strong>Câu hiện tại:</strong> <span id="questionNumber">--</span> / 10</p>
+
+<!-- Dãy nút 1-10 -->
+<div id="questionButtons" class="mb-3"></div>
+
+<!-- Nút điều hướng -->
+<div class="mb-3">
+    <button onclick="prevQuestion()" class="btn btn-sm btn-secondary">⬅️ Lùi lại</button>
+    <button onclick="nextQuestion()" class="btn btn-sm btn-secondary">➡️ Tiếp theo</button>
+</div>
 
 <br />
 
@@ -46,10 +56,19 @@
                 });
             });
     }
+    function prevQuestion() {
+        currentRound--;
+        currentIndex = 0;
+        socket.emit("clear-student-summary");
+        socket.emit("show-question", currentRound);
+        loadQuestion(currentRound, currentIndex);
+    }
+
 
     function nextQuestion() {
         currentRound++;
         currentIndex = 0;
+        socket.emit("clear-student-summary");
         socket.emit("show-question", currentRound);
         loadQuestion(currentRound, currentIndex);
     }
@@ -105,4 +124,7 @@
     function showStudentResults() {
         socket.emit("get-student-results");
     }
+
+
+
 </script>

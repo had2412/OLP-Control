@@ -73,13 +73,28 @@
                     @if (Session["FullName"] != null && Session["Role"]?.ToString() == "ThiSinh")
                     {
                         <li class="nav-item">
-                            @Html.ActionLink("Bài thi", "Index", "ThiSinh", null, new { @class = "nav-link" })
+                            @Html.ActionLink("Vòng 1", "VongMot", "ThiSinh", null, new { @class = "nav-link" })
+                        </li>
+                        <li class="nav-item">
+                            @Html.ActionLink("Vòng 2", "VongHai", "ThiSinh", null, new { @class = "nav-link" })
+                        </li>
+                        <li class="nav-item">
+                            @Html.ActionLink("Vòng 3", "VongBa", "ThiSinh", null, new { @class = "nav-link" })
                         </li>
                     }
                     @if (Session["FullName"] != null && Session["Role"]?.ToString() == "Admin")
                     {
                         <li class="nav-item">
-                            @Html.ActionLink("Quản lý bài thi", "Index", "Admin", null, new { @class = "nav-link" })
+                            @Html.ActionLink("Quản lý Vòng 1", "VongMot", "Admin", null, new { @class = "nav-link" })
+                        </li>
+                        <li class="nav-item">
+                            @Html.ActionLink("Quản lý Vòng 2", "VongHai", "Admin", null, new { @class = "nav-link" })
+                        </li>
+                        <li class="nav-item">
+                            @Html.ActionLink("Quản lý Vòng 3", "VongBa", "Admin", null, new { @class = "nav-link" })
+                        </li>
+                        <li class="nav-item">
+                            @Html.ActionLink("Quản lý câu hỏi", "Questions", "Admin", null, new { @class = "nav-link" })
                         </li>
                     }
 
