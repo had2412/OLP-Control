@@ -18,7 +18,8 @@ app.use('/api/questions', require('./routes/questions'));
 app.use('/api/scores', require('./routes/scores'));
 app.use('/api/answers', answerRoutes);
 app.use('/api/users', require('./routes/users'));
-
+const questionRoutes = require('./routes/questions');
+app.use('/api/questions', questionRoutes);
 server.listen(3000, () => {
     console.log('🚀 Server running at http://localhost:3000');
 });

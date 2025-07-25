@@ -2,8 +2,11 @@ const express = require('express');
 const router = express.Router();
 const poolPromise = require('../db/sql');
 
+// ===========================
+// Ghi câu trả lời thí sinh
+// ===========================
 router.post('/', async (req, res) => {
-    const { userId, questionId, selectedAnswer } = req.body;
+    const { userId, questionId, selectedAnswer, timeTaken } = req.body;
 
     if (!userId || !questionId) {
         return res.status(400).json({ error: 'Thiếu userId hoặc questionId' });
@@ -22,7 +25,6 @@ router.post('/', async (req, res) => {
 
         const correctAnswer = result.recordset[0].CorrectAnswer;
 
-        // Nếu không trả lời thì không đúng
         const isCorrect = (selectedAnswer && correctAnswer === selectedAnswer) ? true : false;
 
         await pool.request()
@@ -30,9 +32,10 @@ router.post('/', async (req, res) => {
             .input('qid', questionId)
             .input('ans', selectedAnswer === "" ? null : selectedAnswer)
             .input('iscorrect', isCorrect)
+            .input('timems', timeTaken ?? null) // <-- thêm dòng này
             .query(`
-                INSERT INTO Answers (UserId, QuestionId, SelectedAnswer, IsCorrect, AnswerTime)
-                VALUES (@uid, @qid, @ans, @iscorrect, GETDATE())
+                INSERT INTO Answers (UserId, QuestionId, SelectedAnswer, IsCorrect, AnswerTime, TimeTaken)
+                VALUES (@uid, @qid, @ans, @iscorrect, GETDATE(), @timems)
             `);
 
         res.json({ status: 'ok', isCorrect });
@@ -43,9 +46,9 @@ router.post('/', async (req, res) => {
 });
 
 
-
-
-// Tổng kết 10 câu gần nhất của mỗi User
+// ===========================
+// Tổng kết 10 câu gần nhất
+// ===========================
 router.get('/summary/recent', async (req, res) => {
     try {
         const pool = await poolPromise;
@@ -60,7 +63,8 @@ router.get('/summary/recent', async (req, res) => {
                    COUNT(*) AS Total,
                    SUM(CASE WHEN RA.IsCorrect = 1 THEN 1 ELSE 0 END) AS CorrectAnswers,
                    MIN(RA.AnswerTime) AS FirstAnswerTime,
-                   MAX(RA.AnswerTime) AS LastAnswerTime
+                   MAX(RA.AnswerTime) AS LastAnswerTime,
+                   SUM(RA.TimeTaken) AS TotalTimeTaken
             FROM RankedAnswers RA
             JOIN Users U ON RA.UserId = U.UserId
             WHERE RA.rn <= 10
@@ -73,7 +77,7 @@ router.get('/summary/recent', async (req, res) => {
             Total: row.Total,
             CorrectAnswers: row.CorrectAnswers,
             Score: row.CorrectAnswers * 10,
-            TimeTakenSeconds: Math.floor((new Date(row.LastAnswerTime) - new Date(row.FirstAnswerTime)) / 1000)
+            TimeTakenSeconds: Math.floor((row.TotalTimeTaken || 0) / 1000)
         }));
 
         res.json(summary);
@@ -84,7 +88,9 @@ router.get('/summary/recent', async (req, res) => {
 });
 
 
-// 🔍 Tổng kết chi tiết 10 câu gần nhất
+// ===========================
+// Tổng kết chi tiết 10 câu
+// ===========================
 router.get('/summary/detail/:userId', async (req, res) => {
     const userId = parseInt(req.params.userId);
 
@@ -105,6 +111,7 @@ router.get('/summary/detail/:userId', async (req, res) => {
                        Q.OptionA, Q.OptionB, Q.OptionC, Q.OptionD,
                        Q.CorrectAnswer,
                        RA.SelectedAnswer,
+                       RA.TimeTaken,
                        CASE 
                            WHEN RA.SelectedAnswer IS NULL THEN 'Sai'
                            WHEN RA.SelectedAnswer = Q.CorrectAnswer THEN 'Đúng'
@@ -122,7 +129,5 @@ router.get('/summary/detail/:userId', async (req, res) => {
         res.status(500).send("Lỗi tổng kết chi tiết: " + err.message);
     }
 });
-
-
 
 module.exports = router;
