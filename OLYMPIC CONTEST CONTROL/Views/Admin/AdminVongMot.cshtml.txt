@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewBag.Title = "Admin - Điều khiển vòng thi";
 }
 
@@ -589,15 +589,9 @@
     }
 
     function endRound() {
-        // Gửi sự kiện kết thúc vòng
-        socket.emit("end-round", currentRound);
-
-        // Yêu cầu server tổng hợp kết quả thí sinh
-        socket.emit("get-student-results");
-
+        socket.emit("round-ended", currentRound);
         alert("Vòng " + currentRound + " đã kết thúc!");
     }
-
 
     function showStudentResults() {
         socket.emit("get-student-results");

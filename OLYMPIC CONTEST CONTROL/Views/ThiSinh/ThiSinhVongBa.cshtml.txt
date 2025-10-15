@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewBag.Title = "Vòng 3 - Thí sinh";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }

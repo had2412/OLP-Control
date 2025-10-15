@@ -203,6 +203,8 @@
     <Content Include="Views\Admin\VongHai.cshtml" />
     <Content Include="Views\Admin\VongBa.cshtml" />
     <Content Include="Views\ThiSinh\VongBa.cshtml" />
+    <Content Include="Views\Admin\QuestionsVongHai.cshtml" />
+    <Content Include="Views\Admin\QuestionsVongBa.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

@@ -5,53 +5,115 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@ViewBag.Title - Olympic Tiếng Anh THCS</title>
 
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 
     <style>
         body {
             font-family: 'Roboto', sans-serif;
-            background-color: #f4f6f9;
+            margin: 0;
+            min-height: 100vh;
+            line-height: 1.6;
+            background: #f8f9fa;
         }
 
         .navbar-custom {
-            background-color: #007bff;
+            background: white;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 15px 0;
+            position: relative;
+            z-index: 1000;
         }
 
-            .navbar-custom .navbar-brand,
-            .navbar-custom .nav-link {
-                color: #fff;
-                font-weight: bold;
+        .navbar-brand {
+            color: #2e7d32 !important;
+            font-weight: 700;
+            font-size: 1.4rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+            .navbar-brand:hover {
+                color: #4caf50 !important;
+                transform: scale(1.05);
+                transition: all 0.3s ease;
             }
 
-                .navbar-custom .nav-link:hover {
-                    color: #ffe600;
-                }
-
-        .body-content {
-            margin-top: 30px;
-            padding-bottom: 50px;
+        .nav-link {
+            color: #2e7d32 !important;
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin: 0 8px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            padding: 10px 15px !important;
         }
 
-        footer {
-            background-color: #343a40;
-            color: white;
-            padding: 15px 0;
-            text-align: center;
-            margin-top: 50px;
-        }
+            .nav-link:hover {
+                color: #4caf50 !important;
+                background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+            }
+
+            .nav-link.disabled {
+                color: #666 !important;
+                font-weight: 600;
+                background: #f5f5f5;
+            }
 
         .logout-icon {
-            color: white;
-            font-size: 18px;
-            padding-left: 15px;
-            text-decoration: none;
+            color: #2e7d32;
+            font-size: 1.2rem;
+            padding: 10px 15px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
         }
 
             .logout-icon:hover {
-                color: #ffc107;
+                color: #f44336;
+                background: #ffebee;
+                transform: scale(1.1);
             }
+
+        /* Body Content */
+        .body-content {
+            margin-top: 30px;
+            padding: 40px 0;
+            min-height: calc(100vh - 100px);
+        }
+
+        /* Footer */
+        footer {
+            background: #1b5e20;
+            color: white;
+            padding: 25px 0;
+            text-align: center;
+        }
+
+            footer p {
+                margin: 0;
+                font-size: 1rem;
+                font-weight: 500;
+            }
+
+        /* Responsive Design */
+        @@media (max-width: 768px) {
+            .navbar-brand {
+                font-size: 1.2rem;
+            }
+
+            .nav-link {
+                font-size: 0.9rem;
+                margin: 0 4px;
+                padding: 8px 12px !important;
+            }
+
+            .body-content {
+                margin-top: 20px;
+                padding: 20px 0;
+            }
+        }
     </style>
 
     @RenderSection("head", required: false)
@@ -60,6 +122,7 @@
     <nav class="navbar navbar-expand-sm navbar-custom shadow">
         <div class="container">
             @Html.ActionLink("🏆 Olympic Tiếng Anh THCS", "Index", "Home", new { area = "" }, new { @class = "navbar-brand" })
+
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -96,12 +159,13 @@
                         <li class="nav-item">
                             @Html.ActionLink("Quản lý câu hỏi", "Questions", "Admin", null, new { @class = "nav-link" })
                         </li>
+                        
                     }
 
                     @if (Session["FullName"] != null)
                     {
                         <li class="nav-item">
-                            <span class="nav-link disabled text-light">👤 @Session["FullName"]</span>
+                            <span class="nav-link disabled">👤 @Session["FullName"]</span>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link logout-icon" title="Đăng xuất" href="@Url.Action("Logout", "Auth")">
@@ -116,18 +180,19 @@
                         </li>
                     }
                 </ul>
-
             </div>
         </div>
     </nav>
 
-    <div class="container body-content">
-        @RenderBody()
+    <div class="container">
+        <div class="body-content">
+            @RenderBody()
+        </div>
     </div>
 
     <footer>
         <div class="container">
-            <p>&copy; @DateTime.Now.Year Cuộc thi Olympic Tiếng Anh dành cho học sinh THCS</p>
+            <p>&copy; @DateTime.Now.Year Cuộc thi Olympic Tiếng Anh dành cho học sinh THCS - Nơi khơi nguồn đam mê học tập</p>
         </div>
     </footer>
 

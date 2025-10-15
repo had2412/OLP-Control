@@ -1,0 +1,301 @@
+﻿@{
+    ViewBag.Title = "Quản lý Câu hỏi Vòng 2";
+}
+
+<style>
+    body {
+        background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+        font-family: 'Segoe UI', 'Arial', sans-serif;
+        color: #e65100;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .page-header {
+        background: linear-gradient(135deg, #ffb74d 0%, #ff9800 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        box-shadow: 0 8px 25px rgba(255, 152, 0, 0.25);
+        text-align: center;
+    }
+
+        .page-header h2 {
+            margin: 0;
+            font-size: 2.2rem;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        }
+
+    .btn {
+        border: none;
+        border-radius: 8px;
+        padding: 12px 24px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+        margin: 5px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #ffa726 0%, #fb8c00 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4);
+    }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 152, 0, 0.5);
+        }
+
+    .btn-success {
+        background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+    }
+
+    .btn-warning {
+        background: linear-gradient(135deg, #ffca28 0%, #ffa000 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+    }
+
+    .btn-danger {
+        background: linear-gradient(135deg, #ef5350 0%, #e53935 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(239, 83, 80, 0.3);
+    }
+
+    .btn-sm {
+        padding: 8px 16px;
+        font-size: 12px;
+    }
+
+    .table-container {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 30px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+        overflow: hidden;
+    }
+
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .table th {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            color: #e65100;
+            font-weight: 700;
+            padding: 15px 12px;
+            border-bottom: 3px solid #fb8c00;
+            text-transform: uppercase;
+        }
+
+        .table td {
+            padding: 12px;
+            border-bottom: 1px solid #ffe0b2;
+            vertical-align: middle;
+            color: #424242;
+        }
+
+        .table tbody tr:hover {
+            background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+            transform: scale(1.01);
+            transition: all 0.2s ease;
+        }
+
+    .form-container {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+        margin-top: 20px;
+    }
+
+    .form-title {
+        color: #e65100;
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 3px solid #fb8c00;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #e65100;
+            font-weight: 600;
+        }
+
+    .form-control {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #ffe0b2;
+        border-radius: 8px;
+        font-size: 14px;
+        background: #fffaf2;
+        transition: all 0.3s ease;
+    }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #fb8c00;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.15);
+        }
+
+    textarea.form-control {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    .options-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+
+    .content-cell {
+        max-width: 300px;
+        word-wrap: break-word;
+    }
+
+    .actions-cell {
+        white-space: nowrap;
+    }
+</style>
+
+<div class="container">
+    <div class="page-header">
+        <h2>🎯 Quản lý Câu hỏi Vòng 2</h2>
+        <p style="margin: 10px 0 0 0; opacity: 0.9;">Thêm, chỉnh sửa và quản lý câu hỏi cho vòng 2</p>
+    </div>
+
+    <!-- ✅ Nút chuyển view theo từng vòng -->
+    <div style="text-align:center; margin-bottom:20px;">
+        <a href="/Admin/Questions" class="btn btn-success">Vòng 1</a>
+        <a href="/Admin/QuestionsVongHai" class="btn btn-warning">Vòng 2</a>
+        <a href="/Admin/QuestionsVongBa" class="btn btn-info">Vòng 3</a>
+    </div>
+
+    <div class="table-container">
+        <button onclick="loadQuestions()" class="btn btn-primary mb-3">🔄 Tải lại danh sách</button>
+        <table class="table" id="questionsTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nội dung</th>
+                    <th>Đáp án đúng</th>
+                    <th>Lời giải</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <div class="form-container">
+        <h3 class="form-title" id="formTitle">➕ Thêm câu hỏi mới</h3>
+        <form onsubmit="saveQuestion(event)">
+            <input type="hidden" id="questionId" />
+            <div class="form-group">
+                <label>❓ Nội dung câu hỏi:</label>
+                <textarea id="content" class="form-control" required></textarea>
+            </div>
+            <div class="form-group">
+                <label>🔤 Các lựa chọn:</label>
+                <div class="options-grid">
+                    <input id="optionA" class="form-control" placeholder="A. Lựa chọn A" />
+                    <input id="optionB" class="form-control" placeholder="B. Lựa chọn B" />
+                    <input id="optionC" class="form-control" placeholder="C. Lựa chọn C" />
+                    <input id="optionD" class="form-control" placeholder="D. Lựa chọn D" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label>✅ Đáp án đúng:</label>
+                <input id="correctAnswer" maxlength="5" class="form-control" placeholder="A, B, C hoặc D" />
+            </div>
+            <div class="form-group">
+                <label>📘 Lời giải:</label>
+                <textarea id="explanation" class="form-control" placeholder="Nhập lời giải chi tiết..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-success">💾 Lưu câu hỏi</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    async function loadQuestions() {
+        const res = await fetch("http://localhost:3000/api/questions/round2");
+        const data = await res.json();
+        const tbody = document.querySelector("#questionsTable tbody");
+        tbody.innerHTML = data.map(q => `
+        <tr>
+            <td><strong>#${q.QuestionId}</strong></td>
+            <td class="content-cell">${q.Content}</td>
+            <td>${q.CorrectAnswer}</td>
+            <td>${q.Explanation || ''}</td>
+            <td class="actions-cell">
+                <button onclick='editQuestion(${JSON.stringify(q)})' class="btn btn-sm btn-warning">✏️ Sửa</button>
+                <button onclick='deleteQuestion(${q.QuestionId})' class="btn btn-sm btn-danger">🗑️ Xóa</button>
+            </td>
+        </tr>
+    `).join("");
+    }
+
+    function editQuestion(q) {
+        document.getElementById("formTitle").innerText = "✏️ Chỉnh sửa câu hỏi";
+        document.getElementById("questionId").value = q.QuestionId;
+        document.getElementById("content").value = q.Content;
+        document.getElementById("optionA").value = q.OptionA;
+        document.getElementById("optionB").value = q.OptionB;
+        document.getElementById("optionC").value = q.OptionC;
+        document.getElementById("optionD").value = q.OptionD;
+        document.getElementById("correctAnswer").value = q.CorrectAnswer;
+        document.getElementById("explanation").value = q.Explanation;
+    }
+
+    async function saveQuestion(e) {
+        e.preventDefault();
+        const id = document.getElementById("questionId").value;
+        const method = id ? "PUT" : "POST";
+        const url = `http://localhost:3000/api/questions/round2${id ? '/' + id : ''}`;
+        const body = {
+            Content: content.value,
+            OptionA: optionA.value,
+            OptionB: optionB.value,
+            OptionC: optionC.value,
+            OptionD: optionD.value,
+            CorrectAnswer: correctAnswer.value.toUpperCase(),
+            Explanation: explanation.value
+        };
+        const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        if (res.ok) { alert("✅ Lưu thành công!"); loadQuestions(); e.target.reset(); }
+        else alert("❌ Lỗi khi lưu!");
+    }
+
+    async function deleteQuestion(id) {
+        if (!confirm("⚠️ Xóa câu hỏi này?")) return;
+        const res = await fetch(`http://localhost:3000/api/questions/round2/${id}`, { method: "DELETE" });
+        if (res.ok) { alert("🗑️ Đã xóa!"); loadQuestions(); }
+    }
+
+    loadQuestions();
+</script>

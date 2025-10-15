@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewBag.Title = "Vòng 2 - Giành quyền trả lời";
 }
 

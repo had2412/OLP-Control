@@ -33,12 +33,15 @@ namespace OLYMPIC_CONTEST_CONTROL.Controllers
 
         public ActionResult VongBa()
         {
+            var userId = Session["UserId"];
+            var fullName = Session["FullName"];
             if (Session["UserId"] == null)
             {
                 return RedirectToAction("Login", "Auth");
             }
 
-            ViewBag.FullName = Session["FullName"];
+            ViewBag.UserId = userId;
+            ViewBag.FullName = fullName;
             return View();
         }
     }
