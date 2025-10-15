@@ -1,0 +1,603 @@
+@{
+    ViewBag.Title = "Vòng 3 - Admin";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+/* ========== TOÀN TRANG ========== */
+body {
+    background: #f1f8e9;
+    font-family: 'Roboto', sans-serif;
+    color: #1b5e20;
+    margin: 0;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* ========== HEADER ========== */
+.page-header {
+    background: linear-gradient(135deg, #4caf50 0%, #388e3c 50%, #2e7d32 100%);
+    color: white;
+    padding: 25px;
+    border-radius: 18px;
+    margin-bottom: 25px;
+    box-shadow: 0 10px 30px rgba(76, 175, 80, 0.25);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.page-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    animation: rotate 25s linear infinite;
+}
+
+@@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.page-header h2 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 800;
+    text-shadow: 0 3px 6px rgba(0,0,0,0.2);
+    position: relative;
+    z-index: 2;
+}
+
+/* ========== KHUNG CHỨA ========== */
+.admin-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 25px;
+}
+
+.section-box {
+    background: linear-gradient(145deg, #ffffff, #f9fbe7);
+    border: 2px solid #dcedc8;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 25px;
+    box-shadow: 0 6px 20px rgba(46, 125, 50, 0.12);
+    transition: 0.3s;
+}
+
+.section-box:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(46, 125, 50, 0.18);
+}
+
+.section-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #2e7d32;
+    margin-bottom: 18px;
+    text-align: center;
+    letter-spacing: 0.5px;
+}
+
+/* ========== DANH SÁCH THÍ SINH ========== */
+.student-list {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    padding: 0;
+}
+
+.student-list li {
+    background: #ffffff;
+    border: 1px solid #c8e6c9;
+    padding: 12px 16px;
+    border-radius: 12px;
+    text-align: center;
+    font-weight: 600;
+    color: #2e7d32;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    transition: 0.3s;
+}
+
+.student-list li:hover {
+    background: #e8f5e9;
+    transform: translateY(-3px);
+}
+
+/* ========== DANH SÁCH BẤM CHUÔNG (ĐẸP HƠN) ========== */
+.buzz-section {
+    background: linear-gradient(145deg, #ffffff, #f1f8e9);
+    border: 2px solid #a5d6a7;
+    border-radius: 18px;
+    padding: 25px;
+    box-shadow: 0 6px 18px rgba(46, 125, 50, 0.15);
+    margin-top: 25px;
+}
+
+.buzz-section .section-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #2e7d32;
+    margin-bottom: 15px;
+    text-align: center;
+    letter-spacing: 0.5px;
+}
+
+#buzzList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    justify-content: center;
+    padding: 0;
+    list-style: none;
+    margin: 0;
+}
+
+#buzzList li {
+    background: #ffffff;
+    border: 2px solid #c8e6c9;
+    border-radius: 12px;
+    padding: 14px 20px;
+    font-weight: 600;
+    color: #2e7d32;
+    text-align: center;
+    min-width: 160px;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+#buzzList li:hover {
+    background: #e8f5e9;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+}
+
+#buzzList li.selected {
+    background: #c8e6c9 !important;
+    border-color: #66bb6a;
+    transform: scale(1.05);
+}
+
+/* ========== NÚT XÁC NHẬN NGƯỜI ĐƯỢC TRẢ LỜI ========== */
+#confirmBuzzBtn {
+    display: block;
+    width: 100%;
+    margin-top: 18px;
+    padding: 12px 0;
+    background: linear-gradient(135deg, #4caf50, #2e7d32);
+    color: white;
+    font-weight: 600;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: 0.3s ease;
+    font-size: 1rem;
+    box-shadow: 0 4px 10px rgba(46, 125, 50, 0.25);
+}
+
+#btnConfirm:hover {
+    background: linear-gradient(135deg, #66bb6a, #43a047);
+    transform: translateY(-2px);
+}
+
+
+/* ========== COMBOBOX CHỌN THÍ SINH ========== */
+#studentSelect {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid #c8e6c9;
+    background: #f9fbe7;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #33691e;
+    margin-top: 10px;
+}
+
+/* ========== CÂU HỎI HIỆN TẠI ========== */
+.section-box.question-section {
+    background: linear-gradient(145deg, #ffffff, #f1f8e9);
+    border: 2px solid #a5d6a7;
+    box-shadow: 0 8px 24px rgba(46, 125, 50, 0.15);
+    border-radius: 18px;
+    padding: 25px;
+    transition: 0.3s;
+}
+
+.section-box.question-section:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px rgba(46, 125, 50, 0.25);
+}
+
+.section-box.question-section .section-title {
+    font-size: 1.5rem;
+    color: #1b5e20;
+    text-align: center;
+    margin-bottom: 20px;
+    letter-spacing: 0.5px;
+}
+
+.question-box {
+    background: #e8f5e9;
+    border-left: 5px solid #66bb6a;
+    padding: 25px;
+    border-radius: 12px;
+    font-size: 1.15rem;
+    color: #2e7d32;
+    font-weight: 500;
+    line-height: 1.6;
+    box-shadow: inset 0 0 8px rgba(0,0,0,0.05);
+    animation: fadeIn 0.5s ease;
+}
+
+.question-box ul {
+    list-style-type: none;
+    padding: 0;
+    margin-top: 10px;
+}
+
+.question-box li {
+    background: #ffffff;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-bottom: 6px;
+    border: 1px solid #c8e6c9;
+    transition: 0.25s;
+}
+
+.question-box li:hover {
+    background: #c8e6c9;
+    transform: translateX(4px);
+}
+
+@@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ========== NÚT ĐIỀU KHIỂN ========== */
+.btn-next {
+    background: linear-gradient(135deg, #4caf50, #2e7d32);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.3s;
+    margin-top: 10px;
+}
+
+.btn-next:hover {
+    background: linear-gradient(135deg, #66bb6a, #388e3c);
+}
+
+/* ========== BẢNG KẾT QUẢ ========== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    font-size: 0.95rem;
+}
+
+th, td {
+    border: 1px solid #dcedc8;
+    padding: 10px;
+    text-align: center;
+}
+
+th {
+    background: #a5d6a7;
+    color: #1b5e20;
+    font-weight: 700;
+}
+
+td {
+    background: #ffffff;
+}
+
+tr:nth-child(even) td {
+    background: #f1f8e9;
+}
+
+/* ========== HIỆU ỨNG NHẸ ========== */
+.fade-in {
+    animation: fadeIn 0.6s ease-in-out;
+}
+</style>
+
+
+<div class="container">
+    <div class="page-header">
+        <h2>📊 Vòng 3 - Quản lý thi đấu</h2>
+        <p style="margin: 8px 0 0 0; opacity: 0.9; font-size: 1rem;">Quản lý cuộc thi và điều khiển thí sinh</p>
+    </div>
+
+    <!-- Danh sách thí sinh -->
+    <div class="section-box">
+        <div class="section-title">👥 Danh sách thí sinh</div>
+        <ul id="student-list" class="student-list"></ul>
+
+        <!-- Thêm combobox chọn thí sinh -->
+        <label for="studentSelect">Chọn thí sinh bắt đầu:</label>
+        <select id="studentSelect" style="padding:6px 10px;border-radius:5px;">
+            <option value="">--Chọn thí sinh--</option>
+        </select>
+
+    </div>
+    <div></div>
+
+    <!-- Câu hỏi đang hiển thị -->
+    <div class="section-box question-section">
+        <div class="section-title">❓ Câu hỏi hiện tại</div>
+        <div id="current-question" class="question-box">Chưa có câu hỏi</div>
+        <button id="btnStart" class="btn-next">➡️ Bắt đầu vòng 3</button>
+        <button id="btnNext" class="btn-next">➡️ Chuyển sang câu tiếp theo</button>
+        <button id="btnPrev" class="btn-next">➡️ Lùi lại</button>
+        <div class="mt-3">
+
+        </div>
+
+    </div>
+
+    <!-- Kết quả trả lời từng câu -->
+    <div class="section-box">
+        <div class="section-title">📝 Kết quả từng câu</div>
+        <table id="answer-table">
+            <thead>
+                <tr>
+                    <th>Thí sinh</th>
+                    <th>Câu hỏi</th>
+                    <th>Đáp án chọn</th>
+                    <th>Đáp án đúng</th>
+                    <th>Kết quả</th>
+                    <th>Điểm</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <!-- Tổng kết điểm -->
+    <div class="section-box">
+        <h2 class="section-title">🏆 Bảng tổng kết</h2>
+        <table id="summary-table">
+            <thead>
+                <tr>
+                    <th>Thí sinh</th>
+                    <th>Số câu</th>
+                    <th>Tổng điểm</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+
+
+        <!-- Button hiển thị kết quả -->
+        <div style="margin-top: 15px; text-align: center;">
+            <button id="btnShowSummary" class="btn btn-success">📊 Hiển thị kết quả tổng kết</button>
+        </div>
+    </div>
+    <!-- Bảng tổng kết 3 vòng -->
+    <div class="section-box">
+        <h2 class="section-title">🏆 Bảng tổng kết 3 vòng</h2>
+        <table id="summary-table-all">
+            <thead>
+                <tr>
+                    <th>Xếp hạng</th>
+                    <th>Thí sinh</th>
+                    <th>Vòng 1</th>
+                    <th>Vòng 2</th>
+                    <th>Vòng 3</th>
+                    <th>Tổng điểm</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <div class="mt-3" style="text-align:center;">
+            <button onclick="showFinalResults()" class="btn btn-danger">
+                🏁 Kết thúc cuộc thi & Xem kết quả tổng hợp
+            </button>
+        </div>
+    </div>
+</div>
+<div class="section-box buzz-section">
+    <div class="section-title">📣 Danh sách bấm chuông</div>
+    <ul id="buzzList" style="list-style:none;padding:0"></ul>
+    <button id="btnConfirm" disabled>Xác nhận người được trả lời</button>
+</div>
+
+
+@section Scripts {
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        const socket = io("http://localhost:3000");
+        let selectedBuzzer = null;
+
+        // Bắt đầu vòng 3 cho thí sinh được chọn
+        document.getElementById("btnStart").addEventListener("click", () => {
+            const userId = document.getElementById("studentSelect").value;
+            if (!userId) {
+                alert("Hãy chọn thí sinh trước khi bắt đầu");
+                return;
+            }
+            socket.emit("v3-start-round", { userId });
+        });
+
+        // Render danh sách buzzer an toàn (không dùng onclick chuỗi)
+        socket.on("v3-buzz-list", (data) => {
+            const ul = document.getElementById("buzzList");
+            ul.innerHTML = "";
+            if (!data || !Array.isArray(data.buzzers)) {
+                document.getElementById("btnConfirm").disabled = true;
+                return;
+            }
+            data.buzzers.forEach(b => {
+                const li = document.createElement("li");
+                li.textContent = `${b.fullName} (${b.userId})`;
+                li.style.cursor = "pointer";
+                li.style.padding = "8px";
+                li.style.borderRadius = "6px";
+                li.dataset.userid = b.userId;
+                li.dataset.fullname = b.fullName;
+                li.addEventListener("click", () => {
+                    selectedBuzzer = { userId: li.dataset.userid, fullName: li.dataset.fullname };
+                    // highlight
+                    Array.from(ul.children).forEach(ch => ch.style.background = "");
+                    li.style.background = "#e0f2f1";
+                });
+                ul.appendChild(li);
+            });
+            document.getElementById("btnConfirm").disabled = data.buzzers.length === 0;
+        });
+
+        // Xác nhận người trả lời
+        document.getElementById("btnConfirm").addEventListener("click", () => {
+            if (!selectedBuzzer) {
+                alert("Hãy chọn người bấm chuông trước khi xác nhận.");
+                return;
+            }
+            socket.emit("v3-buzzer-confirmed", selectedBuzzer);
+            // reset selection UI
+            selectedBuzzer = null;
+            document.getElementById("btnConfirm").disabled = true;
+            document.getElementById("buzzList").innerHTML = "";
+        });
+
+        // Load danh sách thí sinh
+        socket.emit("v3-get-students");
+        socket.on("v3-student-list", (list) => {
+            const ul = document.getElementById("student-list");
+            const sel = document.getElementById("studentSelect");
+            ul.innerHTML = "";
+            sel.innerHTML = `<option value="">--Chọn thí sinh--</option>`;
+            list.forEach(s => {
+                const li = document.createElement("li");
+                li.textContent = `${s.name} (${s.id})`;
+                ul.appendChild(li);
+                const opt = document.createElement("option");
+                opt.value = s.id;
+                opt.textContent = `${s.name} (${s.id})`;
+                sel.appendChild(opt);
+            });
+        });
+
+        // Hiển thị câu hỏi admin (v3-admin-show-question)
+        let currentUserId = null;
+        socket.on("v3-admin-show-question", (data) => {
+            currentUserId = data.userId;
+            document.getElementById("current-question").innerHTML =
+                `<b>Câu ${data.Order}:</b> ${data.Content}<br>
+                             <ul>
+                                <li>A: ${data.OptionA}</li>
+                                <li>B: ${data.OptionB}</li>
+                                <li>C: ${data.OptionC}</li>
+                                <li>D: ${data.OptionD}</li>
+                             </ul>
+                             <i>Thí sinh: ${data.fullName}</i>`;
+        });
+
+        // Next button
+        document.getElementById("btnNext").addEventListener("click", () => {
+            if (!currentUserId) {
+                alert("Chưa có thí sinh đang thi.");
+                return;
+            }
+            socket.emit("v3-next-question", { userId: currentUserId });
+        });
+
+        // Prev button
+        document.getElementById("btnPrev").addEventListener("click", () => {
+            if (!currentUserId) {
+                alert("Chưa có thí sinh đang thi.");
+                return;
+            }
+            socket.emit("v3-prev-question", { userId: currentUserId });
+        });
+
+        // Receive answer results (bảng)
+        socket.on("v3-answer-result", (data) => {
+            const tbody = document.querySelector("#answer-table tbody");
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                            <td>${data.fullName}</td>
+                            <td>${data.questionId - 1}</td>
+                            <td>${data.answer || '-'}</td>
+                            <td>${data.correctAnswer}</td>
+                            <td>${data.isCorrect ? "✅ Đúng" : "❌ Sai"}</td>
+                            <td>${data.score}</td>`;
+            tbody.appendChild(row);
+            currentUserId = data.userId;
+        });
+
+        // Summary
+        document.getElementById("btnShowSummary").addEventListener("click", () => {
+            socket.emit("v3-get-results");
+        });
+        socket.on("v3-result-table", (data) => {
+            const tbody = document.querySelector("#summary-table tbody");
+            tbody.innerHTML = "";
+            if (!data || data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3">❌ Chưa có kết quả</td></tr>`;
+                return;
+            }
+            data.forEach(user => {
+                let row = `<tr>
+                                <td>${user.fullName}</td>
+                                <td>${user.total}</td>
+                                <td>${user.score}</td>
+                            </tr>`;
+                tbody.innerHTML += row;
+            });
+        });
+        function showFinalResults() {
+            // Gửi yêu cầu lên server để lấy tổng kết
+            socket.emit("get-final-summary");
+        }
+        // Nhận kết quả từ server và render ra bảng tổng kết 3 vòng
+        socket.on("final-summary-results", (data) => {
+            const tbody = document.querySelector("#summary-table-all tbody"); // ✅ đúng bảng 3 vòng
+            tbody.innerHTML = "";
+
+            if (!data || data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6">❌ Chưa có kết quả</td></tr>`;
+                return;
+            }
+
+            data.sort((a, b) => b.totalScore - a.totalScore);
+
+            data.forEach((item, index) => {
+                let rankIcon = index + 1;
+                if (index === 0) rankIcon = "🏆";
+                else if (index === 1) rankIcon = "🥈";
+                else if (index === 2) rankIcon = "🥉";
+
+                const row = `
+                <tr>
+                    <td>${rankIcon}</td>
+                    <td>${item.fullName}</td>
+                    <td>${item.v1Score}</td>
+                    <td>${item.v2Score}</td>
+                    <td>${item.v3Score}</td>
+                    <td><strong>${item.totalScore}</strong></td>
+                </tr>
+            `;
+                tbody.innerHTML += row;
+            });
+        });
+
+    </script>
+}
+
